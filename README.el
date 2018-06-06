@@ -1,4 +1,3 @@
-
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -108,4 +107,496 @@
 ;; Don't ring the bell
 (setq ring-bell-function 'ignore)
 
+;; Non-nil means draw block cursor as wide as the glyph under it.
+;; For example, if a block cursor is over a tab, it will be drawn as
+;; wide as that tab on the display.
+(setq x-stretch-cursor t)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Enable terminal emacs to copy and paste from system clipboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Note: this uses C-c before the usual C-w, M-w, and C-ya
+;; From: https://stackoverflow.com/questions/64360/how-to-copy-text-from-emacs-to-another-application-on-linux
+;; you need to install xsel (sudo apt install xsel)
+(defun my-copy-to-xclipboard(arg)a
+  (interactive "P")
+  (cond
+   ((not (use-region-p))
+    (message "Nothing to yank to X-clipboard"))
+   ((and (not (display-graphic-p))
+         (/= 0 (shell-command-on-region
+                (region-beginning) (region-end) "xsel -i -b")))
+    (message "Error: Is program `xsel' installed?"))
+   (t
+    (when (display-graphic-p)
+      (call-interactively 'clipboard-kill-ring-save))
+    (message "Yanked region to X-clipboard")
+    (when arg
+      (kill-region  (region-beginning) (region-end)))
+    (deactivate-mark))))
+
+(defun my-cut-to-xclipboard()
+  (interactive)
+  (my-copy-to-xclipboard t))
+
+(defun my-paste-from-xclipboard()
+  (interactive)
+  (if (display-graphic-p)
+      (clipboard-yank)
+    (insert (shell-command-to-string "xsel -o -b"))))
+
+(global-set-key (kbd "C-c C-w") 'my-cut-to-xclipboard)
+(global-set-key (kbd "C-c M-w") 'my-copy-to-xclipboard)
+(global-set-key (kbd "C-c C-y") 'my-paste-from-xclipboard)
+
+;; Ace windows for easy window switching
+(use-package ace-window
+  :ensure t
+  :init
+  (progn
+    (setq aw-scope 'frame)
+    (global-set-key (kbd "C-x O") 'other-frame)
+    (global-set-key [remap other-window] 'ace-window)
+    (custom-set-faces
+     '(aw-leading-char-face
+       ((t (:inherit ace-jump-face-foreground :height 3.0))))) 
+    ))
+
+                                        ; undo tree
+(use-package undo-tree
+  :ensure t
+  :init
+  (global-undo-tree-mode))
+
+
+;; use avy to move fast inside a file
+
+(use-package avy
+  :ensure t
+  :bind ("M-s" . avy-goto-word-1)) ;; changed from char as per jcs
+; flashes the cursor's line when you scroll
+(use-package beacon
+  :ensure t
+  :config
+  (beacon-mode 1)
+; (setq beacon-color "#666600")
+  )
+
+; deletes all the whitespace when you hit backspace or delete
+(use-package hungry-delete
+  :ensure t
+  :config
+  (global-hungry-delete-mode))
+
+
+(use-package multiple-cursors
+  :ensure t)
+
+;origami folding
+(use-package origami
+  :ensure t)
+
+(use-package windmove
+  :ensure t
+  :bind (("S-<left>" . windmove-left)
+         ("S-<right>" . windmove-right)
+         ("S-<up>" . windmove-up)
+         ("S-<down>" . windmove-down)
+         )
+  )
+
+(use-package pdf-tools
+  :ensure t
+  :config
+  ; (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-page)
+  (use-package org-pdfview
+    :ensure t))
+
+(use-package multi-term
+  :ensure t
+  
+  :bind (("C-x m" . multi-term-next)
+	 ("C-x M" . multi-term))
+  :config '(setq multi-term-program "/bin/zsh"))
+
+;; Dict.cc in Emacs
+(use-package dictcc
+  :commands dictcc
+  :bind (("C-x RET ," . dictcc)
+	 ("C-x RET ." . dictcc-at-point))
+  :custom
+  (dictcc-source-lang "de")
+  (dictcc-destination-lang "en")
+  (dictcc-completion-backend 'ivy))
+
+;; Automatically at closing brace, bracket and quote
+(use-package autopair
+  :ensure t
+  :config
+  (autopair-global-mode t)
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Flyspell Mode for Spelling Corrections
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package flyspell
+  :ensure t
+  :init
+  (setq flyspell-issue-welcome-flag nil)
+  :config
+  (defun flyspell-check-next-highlighted-word ()
+    "Custom function to spell check next highlighted word."
+    (interactive)
+    (flyspell-goto-next-error)
+    (ispell-word))
+
+  (global-set-key (kbd "<f7>") 'flyspell-buffer)
+  (global-set-key (kbd "<f8>") 'flyspell-correct-previous)
+  (global-set-key (kbd "<f9>") 'flyspell-correct-previous)
+
+  (add-hook 'text-mode-hook #'flyspell-mode)
+  (add-hook 'prog-mode-hook #'flyspell-prog-mode)
+  )
+(use-package flyspell-correct-ivy
+  :ensure t
+  :after flyspell)
+
+(use-package which-key
+:ensure t
+:config (which-key-mode))
+
+(use-package rainbow-mode
+:ensure t)
+
+(use-package epresent :ensure t)
+
+(use-package company-auctex
+:ensure t  
+:defer t
+  :init
+  (add-hook 'LaTeX-mode-hook 'company-auctex-init))
+
+(use-package tex
+  :defer t
+  :init
+  (setq TeX-auto-save t
+        TeX-parse-self t
+        TeX-syntactic-comment t
+        TeX-PDF-mode t
+        ;; Synctex support
+        TeX-source-correlate-mode t
+        TeX-source-correlate-start-server nil
+        ;; Setup reftex style (RefTeX is supported through extension)
+        reftex-use-fonts t
+        ;; Don't insert line-break at inline math
+        LaTeX-fill-break-at-separators nil)
+  (defvar latex-nofill-env '("equation"
+                             "equation*"
+                             "align"
+                             "align*"
+                             "tabular"
+                             "tikzpicture")
+    "List of environment names in which `auto-fill-mode' will be inhibited.")
+  (add-hook 'LaTeX-mode-hook 'latex/auto-fill-mode)
+  (add-hook 'LaTeX-mode-hook 'latex-math-mode)
+  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+
+  :config
+  ;; (defun my/latex-mode-defaults ()
+  ;;   (visual-line-mode +1)
+  ;;   (yas-minor-mode -1))
+
+  (defun latex//autofill ()
+    "Check whether the pointer is ucrrently inside on the
+environments described in `latex-nofill-env' and if so, inhibits
+the automatic filling of the current paragraph."
+    (let ((do-auto-fill t)
+          (current-environment "")
+          (level 0))
+      (while (and do-auto-fill (not (string= current-environment "document")))
+        (setq level (1+ level)
+              current-environment (LaTeX-current-environment level)
+              do-auto-fill (not (member current-environment latex-nofill-env))))
+      (when do-auto-fill
+        (do-auto-fill))))
+
+  (defun latex/auto-fill-mode ()
+    "Toggle uato-fill-mode using the custom auto-fill function."
+    (interactive)
+    (auto-fill-mode)
+    (setq auto-fill-function 'latex//autofill))
+
+  ;; (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)
+  ;; (add-to-list 'auto-mode-alist '("\\.l[gh]s\\'" . tex-mode))
+
+  (when (eq system-type 'darwin)
+    (setq TeX-view-program-selection
+          '((output-dvi "DVI Viewer")
+            (output-pdf "PDF Viewer")
+            (output-html "HTML Viewer")))
+
+    (setq TeX-view-program-list
+          '(("DVI Viewer" "open %o")
+            ("PDF Viewer" "open %o")
+            ("HTML Viewer" "open %o")))))
+
+(global-set-key (kbd "C-c c") 'org-capture)
+(global-set-key (kbd "C-c a") 'org-agenda)
+
+(define-key org-mode-map (kbd "C-c C-.") 'org-time-stamp-inactive)
+
+(setq org-modules (cons 'org-habit org-modules))
+
+(use-package org-bullets
+  :ensure t
+  :config
+  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+
+(custom-set-variables
+ '(org-directory "~/org")
+ '(org-mobile-directory "~/org")
+ '(org-default-notes-file (concat org-directory "/notes.org"))
+ '(org-export-html-postamble nil)
+ '(org-hide-leading-stars t)
+ '(org-startup-folded (quote overview))
+ '(org-startup-indented t)
+ )
+
+
+(setq org-agenda-custom-commands
+      '(("c" "Simple agenda view"
+         ((agenda "")
+          (alltodo "")))))
+
+(setq org-agenda-custom-commands
+      '(("d" "Daily agenda and all TODOs"
+         ((tags "PRIORITY=\"A\""
+                ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                 (org-agenda-overriding-header "High-priority unfinished tasks:")))
+          (agenda "" ((org-agenda-ndays 1)))
+          (alltodo ""
+                   ((org-agenda-skip-function '(or (air-org-skip-subtree-if-habit)
+                                                   (air-org-skip-subtree-if-priority ?A)
+                                                   (org-agenda-skip-if nil '(scheduled deadline))))
+                    (org-agenda-overriding-header "ALL normal priority tasks:"))))
+         ((org-agenda-compact-blocks t)))))
+
+(setq org-agenda-files (list "~/org/secretary.org" "~/org/notes.org"))
+
+(setq org-capture-templates
+      '(("a" "Appointment" entry (file+headline  "~/org/secretary.org" "Appointment")
+	 "* %?\n\n%^T\n\n:PROPERTIES:\n\n:END:\n\n")
+	("t" "To Do Item" entry (file+headline "~/org/secretary.org" "Tasks")
+	 "* TODO %?\n%u" :prepend t)
+	("n" "Note" entry (file "~/org/notes.org")
+	 "* %?\n%u" :prepend t)
+        ))
+
+(defadvice org-capture-finalize 
+    (after delete-capture-frame activate)  
+  "Advise capture-finalize to close the frame."  
+  (if (equal "capture" (frame-parameter nil 'name))  
+      (delete-frame)))
+
+(defadvice org-capture-destroy 
+    (after delete-capture-frame activate)  
+  "Advise capture-destroy to close the frame."  
+  (if (equal "capture" (frame-parameter nil 'name))  
+      (delete-frame)))  
+
+(use-package noflet
+  :ensure t )
+(defun make-capture-frame ()
+  "Create a new frame and run 'org-capture'."
+  (interactive)
+  (make-frame '((name . "capture")))
+  (select-frame-by-name "capture")
+  (delete-other-windows)
+  (noflet ((switch-to-buffer-other-window (buf) (switch-to-buffer buf)))
+    (org-capture)))
+
+
+(use-package org-download 
+  :ensure t
+  :after org
+  :config
+  (setq-default org-download-heading-lvl nil)
+   ;;; to get rid of the #+DOWNLOADED part
+  (setq-default org-download-image-dir "~/org/img/")
+  (setq org-download-annotate-function (lambda (_) ""))
+  (setq org-download-method 'attach)
+  )
+
+                                        ; to make notes to pdf using org-mode
+                                        ;
+(use-package org-noter
+  :ensure t
+  :config
+  (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
+                org-noter-hide-other t
+		org-noter))
+
+;(use-package org-babel)
+
+
+(use-package org-habit)
+
+(use-package ob-python)
+
+(use-package ob-ipython
+:ensure t
+  :config
+  ;; for now I am disabling elpy only ob-ipython minor mode
+  ;; what we should actually do, is just to ensure that
+  ;; ob-ipython's company backend comes before elpy's (TODO)
+  (add-hook 'ob-ipython-mode-hookp
+            (lambda ()
+              (elpy-mode 0)
+              (company-mode 1)))
+;  (add-to-list 'company-backends 'company-ob-ipython)
+  (add-to-list 'org-latex-minted-langs '(ipython "python")))
+
+;; active Babel languages
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((python . t)
+   (ipython . t)
+   (emacs-lisp . t)
+   (C . t)))
+
+(use-package ivy
+  :ensure t
+  :config
+  (require 'ivy)
+  (ivy-mode t)
+  (setq ivy-use-virtual-buffers t)
+  (setq enable-recursive-minibuffers t)
+  (setq ivy-wrap t)
+  (global-set-key (kbd "C-c C-r") 'ivy-resume)
+  ;; Show #/total when scrolling buffers
+  (setq ivy-count-format "%d/%d ")
+  )
+
+(use-package swiper
+  :ensure t
+  :bind (("C-s" . swiper)
+         ("C-r" . swiper))
+  )
+
+(use-package elpy
+  :ensure t
+  :disabled
+  :init
+  (with-eval-after-load 'python
+    (elpy-enable)
+    (elpy-use-ipython)
+    (delete 'elpy-module-highlight-indentation elpy-modules)))
+
+(use-package company
+  :ensure t
+  :diminish ""
+  :bind ("C-<tab>" . company-complete)
+  :init
+  (global-company-mode)
+  )
+
+(use-package flycheck
+  :ensure t
+  :commands flycheck-mode
+  :init
+  (add-hook 'c++-mode-hook 'flycheck-mode)
+  (add-hook 'c-mode-hook 'flycheck-mode))
+
+(use-package flycheck-irony
+  :ensure t
+  :commands flycheck-irony-setup
+  :init
+  (add-hook 'c++-mode-hook 'flycheck-irony-setup)
+  (add-hook 'c-mode-hook 'flycheck-irony-setup))
+
+(use-package company-statistics
+  :ensure t
+  :config
+  (add-hook 'after-init-hook 'company-statistics-mode))
+
+(use-package company-irony
+  :ensure t
+  :config
+  (eval-after-load 'company
+    '(add-to-list 'company-backends 'company-irony)))
+
+(use-package company-c-headers
+  :ensure t
+  :config
+  (add-to-list 'company-c-headers-path-system "/usr/include/x86_64-linux-gnu")
+                                        ;(add-to-list 'company-c-headers-path-system "/usr/include/clang/6.0.0/include")
+  )
+
+(use-package irony
+  :ensure t
+  :commands irony-mode
+  :init
+  (add-hook 'c++-mode-hook 'irony-mode)
+  (add-hook 'c-mode-hook 'irony-mode)
+  (defun my-irony-mode-hook ()
+    (setq company-backends '(company-irony-c-headers company-irony))
+    (setq irony-additional-clang-options '("-std=c++14")))
+  (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+  (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
+
+(use-package cc-mode
+  :bind (:map c++-mode-map
+              ("C-c f" . clang-format-buffer)
+              ("M-p" . company-complete-common)
+              ("<f5>" . my-compile)))
+
+(use-package clang-format
+  :ensure t
+  :commands clang-format clang-format-buffer clang-format-region)
+
+(use-package cmake-mode
+  :ensure t
+  :mode "CMakeLists.txt")
+
+(use-package company-auctex
+  :ensure t
+  :defer t
+  :hook ((LaTeX-mode . company-auctex-init)))
+
+(use-package company-math
+  :ensure t
+  :defer t
+  :after company
+  ;; Add backend for math characters
+  :init (progn
+          (add-to-list 'company-backends 'company-math-symbols-unicode)
+          (add-to-list 'company-backends 'company-math-symbols-latex)))
+
+
+(use-package company-quickhelp
+  :ensure t
+  :defer t
+  :after company
+  :hook ((company-mode . company-quickhelp-mode))
+  :config (setq company-quickhelp-delay 0.1))
+
+(use-package yasnippet
+  :ensure t
+  :diminish yas-minor-mode
+  :init
+  (yas-global-mode 1)
+  :config
+  ;; Remove Yasnippet's default tab key binding
+  (define-key yas-minor-mode-map (kbd "TAB") nil)
+  ;; Set Yasnippet's key binding to shift+tab
+  (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand))
+
+(use-package company-math
+  :ensure t
+  :defer t
+  :after company
+  ;; Add backend for math characters
+  :init (progn
+          (add-to-list 'company-backends 'company-math-symbols-unicode)
+          (add-to-list 'company-backends 'company-math-symbols-latex)))
