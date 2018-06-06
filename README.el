@@ -205,14 +205,6 @@
          )
   )
 
-(use-package pdf-tools
-  :ensure t
-  :config
-  ; (pdf-tools-install)
-  (setq-default pdf-view-display-size 'fit-page)
-  (use-package org-pdfview
-    :ensure t))
-
 (use-package multi-term
   :ensure t
   
@@ -270,6 +262,36 @@
 :ensure t)
 
 (use-package epresent :ensure t)
+
+;; wrapper for save-buffer ignoring arguments
+(defun sim/save-buffer-no-args ()
+  "Save buffer ignoring arguments"
+  (save-buffer))
+
+(use-package pdf-tools
+  :pin manual ;;manually update
+  :config
+  ;; initialise
+  (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-page)
+  ;; automatically annotate highlights
+  (setq pdf-annot-activate-created-annotations t)
+  ;; use isearch instead of swiper
+  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+  ;; turn off cua so copy works
+  (add-hook 'pdf-view-mode-hook (lambda () (cua-mode 0)))
+  ;; more fine-grained zooming
+  (setq pdf-view-resize-factor 1.1)
+  ;; keyboard shortcuts
+  (define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
+  (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
+  (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete)
+  ;; wait until map is available
+  (with-eval-after-load "pdf-annot"
+    (define-key pdf-annot-edit-contents-minor-mode-map (kbd "<return>") 'pdf-annot-edit-contents-commit)
+    (define-key pdf-annot-edit-contents-minor-mode-map (kbd "<S-return>") 'newline)
+    ;; save after adding comment
+    (advice-add 'pdf-annot-edit-contents-commit :after 'sim/save-buffer-no-args)))
 
 (use-package company-auctex
 :ensure t  
@@ -493,110 +515,69 @@ the automatic filling of the current paragraph."
     (elpy-use-ipython)
     (delete 'elpy-module-highlight-indentation elpy-modules)))
 
-(use-package company
-  :ensure t
-  :diminish ""
-  :bind ("C-<tab>" . company-complete)
-  :init
-  (global-company-mode)
-  )
-
-(use-package flycheck
-  :ensure t
-  :commands flycheck-mode
-  :init
-  (add-hook 'c++-mode-hook 'flycheck-mode)
-  (add-hook 'c-mode-hook 'flycheck-mode))
-
-(use-package flycheck-irony
-  :ensure t
-  :commands flycheck-irony-setup
-  :init
-  (add-hook 'c++-mode-hook 'flycheck-irony-setup)
-  (add-hook 'c-mode-hook 'flycheck-irony-setup))
-
-(use-package company-statistics
-  :ensure t
-  :config
-  (add-hook 'after-init-hook 'company-statistics-mode))
-
-(use-package company-irony
-  :ensure t
-  :config
-  (eval-after-load 'company
-    '(add-to-list 'company-backends 'company-irony)))
-
-(use-package company-c-headers
-  :ensure t
-  :config
-  (add-to-list 'company-c-headers-path-system "/usr/include/x86_64-linux-gnu")
-                                        ;(add-to-list 'company-c-headers-path-system "/usr/include/clang/6.0.0/include")
-  )
-
-(use-package irony
-  :ensure t
-  :commands irony-mode
-  :init
-  (add-hook 'c++-mode-hook 'irony-mode)
-  (add-hook 'c-mode-hook 'irony-mode)
-  (defun my-irony-mode-hook ()
-    (setq company-backends '(company-irony-c-headers company-irony))
-    (setq irony-additional-clang-options '("-std=c++14")))
-  (add-hook 'irony-mode-hook 'my-irony-mode-hook)
-  (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
-
-(use-package cc-mode
-  :bind (:map c++-mode-map
-              ("C-c f" . clang-format-buffer)
-              ("M-p" . company-complete-common)
-              ("<f5>" . my-compile)))
-
-(use-package clang-format
-  :ensure t
-  :commands clang-format clang-format-buffer clang-format-region)
-
-(use-package cmake-mode
-  :ensure t
-  :mode "CMakeLists.txt")
-
-(use-package company-auctex
-  :ensure t
-  :defer t
-  :hook ((LaTeX-mode . company-auctex-init)))
-
-(use-package company-math
-  :ensure t
-  :defer t
-  :after company
-  ;; Add backend for math characters
-  :init (progn
-          (add-to-list 'company-backends 'company-math-symbols-unicode)
-          (add-to-list 'company-backends 'company-math-symbols-latex)))
-
-
-(use-package company-quickhelp
-  :ensure t
-  :defer t
-  :after company
-  :hook ((company-mode . company-quickhelp-mode))
-  :config (setq company-quickhelp-delay 0.1))
-
+;; Snippets
 (use-package yasnippet
   :ensure t
   :diminish yas-minor-mode
-  :init
-  (yas-global-mode 1)
-  :config
-  ;; Remove Yasnippet's default tab key binding
-  (define-key yas-minor-mode-map (kbd "TAB") nil)
-  ;; Set Yasnippet's key binding to shift+tab
-  (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand))
+  :init (yas-global-mode t))
 
-(use-package company-math
+;; Autocomplete
+(use-package company
   :ensure t
-  :defer t
-  :after company
-  ;; Add backend for math characters
-  :init (progn
-          (add-to-list 'company-backends 'company-math-symbols-unicode)
-          (add-to-list 'company-backends 'company-math-symbols-latex)))
+  :defer 10
+  :diminish company-mode
+  :bind (:map company-active-map
+              ("M-j" . company-select-next)
+              ("M-k" . company-select-previous))
+  :preface
+  ;; enable yasnippet everywhere
+  (defvar company-mode/enable-yas t
+    "Enable yasnippet for all backends.")
+  (defun company-mode/backend-with-yas (backend)
+    (if (or 
+         (not company-mode/enable-yas) 
+         (and (listp backend) (member 'company-yasnippet backend)))
+        backend
+      (append (if (consp backend) backend (list backend))
+              '(:with company-yasnippet))))
+
+  :init (global-company-mode t)
+  :config
+  ;; no delay no autocomplete
+  (setq
+   company-idle-delay 0
+   company-minimum-prefix-length 2
+   company-tooltip-limit 20)
+
+  (setq company-backends 
+        (mapcar #'company-mode/backend-with-yas company-backends)))
+
+;; Code-comprehension server
+(use-package ycmd
+  :ensure t
+  :init (add-hook 'c++-mode-hook #'ycmd-mode)
+  :config
+  (set-variable 'ycmd-server-command '("python" "/usr/share/ycmd/ycmd"))
+  (set-variable 'ycmd-global-config (expand-file-name "~/.emacs.d/ycm_conf.py"))
+                                        ;    (set-variable 'ycmd-extra-conf-whitelist '("~/.emacs.d/ycm_conf.py"))
+
+  (use-package company-ycmd
+    :ensure t
+    :init (company-ycmd-setup)
+    :config (add-to-list 'company-backends (company-mode/backend-with-yas 'company-ycmd))))
+
+;; On-the-fly syntax checking
+(use-package flycheck
+  :ensure t
+  :diminish flycheck-mode
+  :init (global-flycheck-mode t))
+
+(use-package flycheck-ycmd
+  :ensure t
+  :commands (flycheck-ycmd-setup)
+  :init (add-hook 'ycmd-mode-hook 'flycheck-ycmd-setup))
+
+;; Show argument list in echo area
+(use-package eldoc
+  :diminish eldoc-mode
+  :init (add-hook 'ycmd-mode-hook 'ycmd-eldoc-setup))
