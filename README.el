@@ -269,7 +269,7 @@
   (save-buffer))
 
 (use-package pdf-tools
-  :pin manual ;;manually update
+  :ensure t
   :config
   ;; initialise
   (pdf-tools-install)
