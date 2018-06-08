@@ -350,6 +350,12 @@ the automatic filling of the current paragraph."
             ("PDF Viewer" "open %o")
             ("HTML Viewer" "open %o")))))
 
+(use-package cdlatex
+  :ensure t
+  :config
+  (add-hook 'LaTeX-mode-hook 'turn-on-org-cdlatex)
+  (add-hook 'org-mode-hook 'turn-on-org-cdlatex))
+
 (global-set-key (kbd "C-c c") 'org-capture)
 (global-set-key (kbd "C-c a") 'org-agenda)
 
