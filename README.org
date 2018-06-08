@@ -471,8 +471,7 @@ General org-mode configuration
   (setq org-download-method 'attach)
   )
 
-                                        ; to make notes to pdf using org-mode
-                                        ;
+  ;; to make notes to pdf using org-mode
 (use-package org-noter
   :ensure t
   :config
@@ -508,6 +507,30 @@ General org-mode configuration
    (emacs-lisp . t)
    (C . t)))
 
+#+END_SRC
+
+** GTD in org-mode
+
+#+BEGIN_SRC emacs-lisp
+  (setq org-agenda-files '("~/gtd/inbox.org"
+                           "~/gtd/gtd.org"
+                           "~/gtd/tickler.org"))
+
+
+  (setq org-capture-templates '(("t" "Todo [inbox]" entry
+                                 (file+headline "~/gtd/inbox.org" "Tasks")
+                                 "* TODO %i%?")
+                                ("T" "Tickler" entry
+                                 (file+headline "~/gtd/tickler.org" "Tickler")
+                                 "* %i%? \n %U")
+                                  ("n" "Note" entry (file "~/org/notes.org")
+                                   "* %?\n%u")))
+  ;; C-c C-w = org-refile
+  (setq org-refile-targets '(("~/gtd/gtd.org" :maxlevel . 3)
+                             ("~/gtd/someday.org" :level . 1)
+                             ("~/gtd/tickler.org" :maxlevel . 2)))
+
+  (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
 
 
@@ -615,26 +638,3 @@ General org-mode configuration
     :init (add-hook 'ycmd-mode-hook 'ycmd-eldoc-setup))
 #+END_SRC
   
-** GTD in org-mode
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-  (setq org-agenda-files '("~/gtd/inbox.org"
-                           "~/gtd/gtd.org"
-                           "~/gtd/tickler.org"))
-
-
-  (setq org-capture-templates '(("t" "Todo [inbox]" entry
-                                 (file+headline "~/gtd/inbox.org" "Tasks")
-                                 "* TODO %i%?")
-                                ("T" "Tickler" entry
-                                 (file+headline "~/gtd/tickler.org" "Tickler")
-                                 "* %i%? \n %U")
-                                  ("n" "Note" entry (file "~/org/notes.org")
-           "* %?\n%u"))
-  ;; C-c C-w = org-refile
-  (setq org-refile-targets '(("~/gtd/gtd.org" :maxlevel . 3)
-                             ("~/gtd/someday.org" :level . 1)
-                             ("~/gtd/tickler.org" :maxlevel . 2)))
-
-  (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
-#+END_SRC

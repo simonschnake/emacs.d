@@ -391,17 +391,6 @@ the automatic filling of the current paragraph."
                     (org-agenda-overriding-header "ALL normal priority tasks:"))))
          ((org-agenda-compact-blocks t)))))
 
-(setq org-agenda-files (list "~/org/secretary.org" "~/org/notes.org"))
-
-(setq org-capture-templates
-      '(("a" "Appointment" entry (file+headline  "~/org/secretary.org" "Appointment")
-	 "* %?\n\n%^T\n\n:PROPERTIES:\n\n:END:\n\n")
-	("t" "To Do Item" entry (file+headline "~/org/secretary.org" "Tasks")
-	 "* TODO %?\n%u" :prepend t)
-	("n" "Note" entry (file "~/org/notes.org")
-	 "* %?\n%u" :prepend t)
-        ))
-
 (defadvice org-capture-finalize 
     (after delete-capture-frame activate)  
   "Advise capture-finalize to close the frame."  
@@ -437,8 +426,7 @@ the automatic filling of the current paragraph."
   (setq org-download-method 'attach)
   )
 
-                                        ; to make notes to pdf using org-mode
-                                        ;
+  ;; to make notes to pdf using org-mode
 (use-package org-noter
   :ensure t
   :config
@@ -473,6 +461,26 @@ the automatic filling of the current paragraph."
    (ipython . t)
    (emacs-lisp . t)
    (C . t)))
+
+(setq org-agenda-files '("~/gtd/inbox.org"
+                         "~/gtd/gtd.org"
+                         "~/gtd/tickler.org"))
+
+
+(setq org-capture-templates '(("t" "Todo [inbox]" entry
+                               (file+headline "~/gtd/inbox.org" "Tasks")
+                               "* TODO %i%?")
+                              ("T" "Tickler" entry
+                               (file+headline "~/gtd/tickler.org" "Tickler")
+                               "* %i%? \n %U")
+                                ("n" "Note" entry (file "~/org/notes.org")
+                                 "* %?\n%u")))
+;; C-c C-w = org-refile
+(setq org-refile-targets '(("~/gtd/gtd.org" :maxlevel . 3)
+                           ("~/gtd/someday.org" :level . 1)
+                           ("~/gtd/tickler.org" :maxlevel . 2)))
+
+(setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 
 (use-package ivy
   :ensure t
