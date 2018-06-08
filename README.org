@@ -534,7 +534,7 @@ General org-mode configuration
                              ("~/gtd/someday.org" :level . 1)
                              ("~/gtd/tickler.org" :maxlevel . 2)))
 
-  (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+  (setq org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
 
 
