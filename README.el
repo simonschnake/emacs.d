@@ -420,7 +420,6 @@ the automatic filling of the current paragraph."
   (noflet ((switch-to-buffer-other-window (buf) (switch-to-buffer buf)))
     (org-capture)))
 
-
 (use-package org-download 
   :ensure t
   :after org
@@ -438,7 +437,7 @@ the automatic filling of the current paragraph."
   :config
   (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
                 org-noter-hide-other t
-		org-noter))
+                org-noter))
 
 ;(use-package org-babel)
 
@@ -467,6 +466,14 @@ the automatic filling of the current paragraph."
    (ipython . t)
    (emacs-lisp . t)
    (C . t)))
+
+(setq org-confirm-babel-evaluate nil)   ;don't prompt me to confirm everytime I want to evaluate a block
+
+;;; display/update images in the buffer after I evaluate
+(add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
+
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/tufte-org-mode")) 
+(require 'ox-tufte-latex)
 
 (setq org-agenda-files '("~/gtd/inbox.org"
                          "~/gtd/gtd.org"

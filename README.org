@@ -399,121 +399,133 @@ some tweaks from http://pragmaticemacs.com/emacs/even-more-pdf-tools-tweaks/
 General org-mode configuration
 
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c c") 'org-capture)
-(global-set-key (kbd "C-c a") 'org-agenda)
+  (global-set-key (kbd "C-c c") 'org-capture)
+  (global-set-key (kbd "C-c a") 'org-agenda)
 
-(define-key org-mode-map (kbd "C-c C-.") 'org-time-stamp-inactive)
+  (define-key org-mode-map (kbd "C-c C-.") 'org-time-stamp-inactive)
 
-(setq org-modules (cons 'org-habit org-modules))
+  (setq org-modules (cons 'org-habit org-modules))
 
-(use-package org-bullets
+  (use-package org-bullets
+    :ensure t
+    :config
+    (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+
+  (custom-set-variables
+   '(org-directory "~/org")
+   '(org-mobile-directory "~/org")
+   '(org-default-notes-file (concat org-directory "/notes.org"))
+   '(org-export-html-postamble nil)
+   '(org-hide-leading-stars t)
+   '(org-startup-folded (quote overview))
+   '(org-startup-indented t)
+   )
+
+
+  (setq org-agenda-custom-commands
+        '(("c" "Simple agenda view"
+           ((agenda "")
+            (alltodo "")))))
+
+  (setq org-agenda-custom-commands
+        '(("d" "Daily agenda and all TODOs"
+           ((tags "PRIORITY=\"A\""
+                  ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                   (org-agenda-overriding-header "High-priority unfinished tasks:")))
+            (agenda "" ((org-agenda-ndays 1)))
+            (alltodo ""
+                     ((org-agenda-skip-function '(or (air-org-skip-subtree-if-habit)
+                                                     (air-org-skip-subtree-if-priority ?A)
+                                                     (org-agenda-skip-if nil '(scheduled deadline))))
+                      (org-agenda-overriding-header "ALL normal priority tasks:"))))
+           ((org-agenda-compact-blocks t)))))
+
+  (defadvice org-capture-finalize 
+      (after delete-capture-frame activate)  
+    "Advise capture-finalize to close the frame."  
+    (if (equal "capture" (frame-parameter nil 'name))  
+        (delete-frame)))
+
+  (defadvice org-capture-destroy 
+      (after delete-capture-frame activate)  
+    "Advise capture-destroy to close the frame."  
+    (if (equal "capture" (frame-parameter nil 'name))  
+        (delete-frame)))  
+
+  (use-package noflet
+    :ensure t )
+  (defun make-capture-frame ()
+    "Create a new frame and run 'org-capture'."
+    (interactive)
+    (make-frame '((name . "capture")))
+    (select-frame-by-name "capture")
+    (delete-other-windows)
+    (noflet ((switch-to-buffer-other-window (buf) (switch-to-buffer buf)))
+      (org-capture)))
+
+  (use-package org-download 
+    :ensure t
+    :after org
+    :config
+    (setq-default org-download-heading-lvl nil)
+     ;;; to get rid of the #+DOWNLOADED part
+    (setq-default org-download-image-dir "~/org/img/")
+    (setq org-download-annotate-function (lambda (_) ""))
+    (setq org-download-method 'attach)
+    )
+
+    ;; to make notes to pdf using org-mode
+  (use-package org-noter
+    :ensure t
+    :config
+    (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
+                  org-noter-hide-other t
+                  org-noter))
+
+  ;(use-package org-babel)
+
+
+  (use-package org-habit)
+
+  (use-package ob-python)
+
+  (use-package ob-ipython
   :ensure t
-  :config
-  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+    :config
+    ;; for now I am disabling elpy only ob-ipython minor mode
+    ;; what we should actually do, is just to ensure that
+    ;; ob-ipython's company backend comes before elpy's (TODO)
+    (add-hook 'ob-ipython-mode-hookp
+              (lambda ()
+                (elpy-mode 0)
+                (company-mode 1)))
+  ;  (add-to-list 'company-backends 'company-ob-ipython)
+    (add-to-list 'org-latex-minted-langs '(ipython "python")))
 
-(custom-set-variables
- '(org-directory "~/org")
- '(org-mobile-directory "~/org")
- '(org-default-notes-file (concat org-directory "/notes.org"))
- '(org-export-html-postamble nil)
- '(org-hide-leading-stars t)
- '(org-startup-folded (quote overview))
- '(org-startup-indented t)
- )
+  ;; active Babel languages
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)
+     (ipython . t)
+     (emacs-lisp . t)
+     (C . t)))
 
+  (setq org-confirm-babel-evaluate nil)   ;don't prompt me to confirm everytime I want to evaluate a block
 
-(setq org-agenda-custom-commands
-      '(("c" "Simple agenda view"
-         ((agenda "")
-          (alltodo "")))))
+  ;;; display/update images in the buffer after I evaluate
+  (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
+#+END_SRC
 
-(setq org-agenda-custom-commands
-      '(("d" "Daily agenda and all TODOs"
-         ((tags "PRIORITY=\"A\""
-                ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                 (org-agenda-overriding-header "High-priority unfinished tasks:")))
-          (agenda "" ((org-agenda-ndays 1)))
-          (alltodo ""
-                   ((org-agenda-skip-function '(or (air-org-skip-subtree-if-habit)
-                                                   (air-org-skip-subtree-if-priority ?A)
-                                                   (org-agenda-skip-if nil '(scheduled deadline))))
-                    (org-agenda-overriding-header "ALL normal priority tasks:"))))
-         ((org-agenda-compact-blocks t)))))
-
-(defadvice org-capture-finalize 
-    (after delete-capture-frame activate)  
-  "Advise capture-finalize to close the frame."  
-  (if (equal "capture" (frame-parameter nil 'name))  
-      (delete-frame)))
-
-(defadvice org-capture-destroy 
-    (after delete-capture-frame activate)  
-  "Advise capture-destroy to close the frame."  
-  (if (equal "capture" (frame-parameter nil 'name))  
-      (delete-frame)))  
-
-(use-package noflet
-  :ensure t )
-(defun make-capture-frame ()
-  "Create a new frame and run 'org-capture'."
-  (interactive)
-  (make-frame '((name . "capture")))
-  (select-frame-by-name "capture")
-  (delete-other-windows)
-  (noflet ((switch-to-buffer-other-window (buf) (switch-to-buffer buf)))
-    (org-capture)))
-
-
-(use-package org-download 
-  :ensure t
-  :after org
-  :config
-  (setq-default org-download-heading-lvl nil)
-   ;;; to get rid of the #+DOWNLOADED part
-  (setq-default org-download-image-dir "~/org/img/")
-  (setq org-download-annotate-function (lambda (_) ""))
-  (setq org-download-method 'attach)
-  )
-
-  ;; to make notes to pdf using org-mode
-(use-package org-noter
-  :ensure t
-  :config
-  (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
-                org-noter-hide-other t
-		org-noter))
-
-;(use-package org-babel)
-
-
-(use-package org-habit)
-
-(use-package ob-python)
-
-(use-package ob-ipython
-:ensure t
-  :config
-  ;; for now I am disabling elpy only ob-ipython minor mode
-  ;; what we should actually do, is just to ensure that
-  ;; ob-ipython's company backend comes before elpy's (TODO)
-  (add-hook 'ob-ipython-mode-hookp
-            (lambda ()
-              (elpy-mode 0)
-              (company-mode 1)))
-;  (add-to-list 'company-backends 'company-ob-ipython)
-  (add-to-list 'org-latex-minted-langs '(ipython "python")))
-
-;; active Babel languages
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((python . t)
-   (ipython . t)
-   (emacs-lisp . t)
-   (C . t)))
-
+** tufte in org-mode
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/tufte-org-mode")) 
+(require 'ox-tufte-latex)
 #+END_SRC
 
 ** GTD in org-mode
+
+| C-c C-W     | org-refile |
+| C-c C-x C-a | org-archive-subtree-default |
 
 #+BEGIN_SRC emacs-lisp
   (setq org-agenda-files '("~/gtd/inbox.org"

@@ -3,7 +3,8 @@
 
 (setq package-archives
       '(("gnu" . "https://elpa.gnu.org/packages/")
-	("melpa" . "https://melpa.org/packages/")))
+	("melpa" . "https://melpa.org/packages/")
+	("org" . "https://orgmode.org/elpa/")))
 
 (setq debug-on-error 't
       network-security-level 'low)
