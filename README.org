@@ -1,5 +1,215 @@
+-*- mode: org; fill-column: 78 -*-
 #+TITLE: Emacs Configuration
-#+AUTHOR: Simon
+#+AUTHOR: Simon Schnake
+#+OPTIONS: toc:4 h:4
+
+* Intro
+
+Emacs Config of Mid 2018.
+
+Main features of this configuration is:
+
+1. ob-tangle to create a literate configuration file
+2. use-package to handle packages
+3. bind-key for shortcuts
+4. use of Ivy
+5. try to keep startup fast
+
+Experimental setup for lsp-mode to use language servers as much as possible
+
+** Requirements
+
+Requires Emacs 26. Only tested on ArchLinux.
+
+Some packages might require external tools such as git, rg, etc.
+
+** Installation
+
+Keep it simple. Clone as =/.emacs.d= and done.
+External Packages to install are listed below:
+
+- 
+* Keybindings
+* Bootstrap Configuration
+
+** Enable lexical binding
+#+BEGIN_SRC emacs-lisp
+  ;;; -*- lexical-binding: t; -*-
+#+END_SRC
+
+** Benchmark Emacs startup
+
+It's easier to optimize Emacs startup time when I have some data
+available. Time code borrowed from [[https://github.com/jwiegley/dot-emacs/blob/master/init.el][John Wiegley's init.el]]
+
+#+BEGIN_SRC emacs-lisp
+  (defconst emacs-start-time (current-time))
+
+  (defun display-startup-echo-area-message ())
+
+  (add-hook 'after-init-hook
+            `(lambda ()
+               (let ((elapsed
+                      (float-time
+                       (time-subtract (current-time) emacs-start-time))))
+                 (message "Loading %s...done (%.3fs) [after-init]"
+                          ,load-file-name elapsed))) t)
+#+END_SRC
+
+** Startup optimizations
+*** Adjust GC in startup
+
+Emacs garbage collector tries to use sane settings for an interactive
+environment. It reduced throughput a bit. We can make Emacs start
+faster by adjusting GC on startup and then fallback to interactive
+settings.
+
+#+BEGIN_SRC emacs-lisp
+  (defvar original-gc-cons-threshold gc-cons-threshold)
+  (defvar original-gc-cons-percentage gc-cons-percentage)
+
+  (setq gc-cons-threshold 402653184
+        gc-cons-percentage 0.6)
+
+  (add-hook 'after-init-hook
+            `(lambda () (setq gc-cons-threshold original-gc-cons-threshold
+                              gc-cons-percentage original-gc-cons-percentage)) t)
+
+#+END_SRC
+*** Remove file handlers on startup
+
+Make startup faster by removing all file handlers for the duration of
+the startup. Should not affect initialization with my configuration.
+
+#+BEGIN_SRC emacs-lisp
+  (defvar file-name-handler-alist-old file-name-handler-alist)
+  (setq file-name-handler-alist nil)
+  (add-hook 'after-init-hook
+            `(lambda () (setq file-name-handler-alist file-name-handler-alist-old)) t)
+#+END_SRC
+
+** Initial frame size
+
+Maximize the initial frame. There will be some flashing unless Emacs
+is started with =-mm= command line parameter.
+
+#+BEGIN_SRC emacs-lisp
+  (setq initial-frame-alist '((fullscreen . maximized)))
+#+END_SRC
+
+** Harden TLS
+
+#+BEGIN_SRC emacs-lisp
+  (require 'tls)
+  (setq tls-checktrust t)
+#+END_SRC
+
+** Use custom file
+Use a specific custom file instead of saving things in =init.el= which
+is used to bootstrap =org-babel=.
+
+#+BEGIN_SRC emacs-lisp
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file t)
+#+END_SRC
+
+** Setup package management
+
+Setup package.el manually to speed up startup. Adapted from
+[[https://github.com/gilbertw1/emacs-literate-starter/blob/master/emacs.org#emacs-initialization][emacs-literate-starter]] and [[https://github.com/nilcons/emacs-use-package-fast][emacs-use-package-fast]].
+
+#+BEGIN_SRC emacs-lisp
+  (eval-and-compile
+    (setq load-prefer-newer t
+          package-user-dir "~/.emacs.d/elpa"
+          package--init-file-ensured t
+          package-enable-at-startup nil)
+
+    (unless (file-directory-p package-user-dir)
+      (make-directory package-user-dir t))
+
+    (eval-and-compile
+      (setq load-path (append load-path (directory-files package-user-dir t "^[^.]" t))))
+
+    ;; Add packages to info, required because we haven't run
+    ;; package-initialize
+    (with-eval-after-load "info"
+      (info-initialize)
+      (dolist (dir (directory-files package-user-dir))
+        (let ((fdir (concat (file-name-as-directory package-user-dir) dir)))
+          (unless (or (member dir '("." ".." "archives" "gnupg"))
+                      (not (file-directory-p fdir))
+                      (not (file-exists-p (concat (file-name-as-directory fdir) "dir"))))
+            (add-to-list 'Info-directory-list fdir))))))
+#+END_SRC
+
+Initialize package.el and [[https://github.com/jwiegley/use-package][use-package]] only when compiling. But hook up
+the initialization if =package-initialize= is called so that package.el
+still works.
+
+#+BEGIN_SRC emacs-lisp
+  (defun vj--setup-package-el (&optional _)
+    (require 'package)
+    ;; Make package-installed-p only check the user package dir for org-mode
+    ;; to make it skip the bundled org-mode.
+    (defun vj--package-installed-p (orig-fn &rest args)
+      (if (eq (car args) 'org)
+          (if (file-expand-wildcards (concat package-user-dir "/org-[0-9]*")) t nil)
+        (apply orig-fn args)))
+    (advice-add 'package-installed-p :around #'vj--package-installed-p)
+
+    (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
+                        (not (gnutls-available-p))))
+           (proto (if no-ssl "http" "https")))
+      (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
+      (add-to-list 'package-archives (cons "org" (concat proto "://orgmode.org/elpa/")) t)
+      (setq package-archive-priorities '(("org" . 3)
+                                         ("melpa" . 2)
+                                         ("gnu" . 1)))))
+
+  (advice-add #'package-initialize :before #'vj--setup-package-el)
+
+  (eval-when-compile
+    (package-initialize)
+    (unless (package-installed-p 'use-package)
+      (package-refresh-contents)
+      (package-install 'use-package)))
+
+  ;; In init-file-debug mode, enable verbosity and statistics for use-package.
+  (eval-and-compile
+    (setq use-package-always-ensure t)
+    (if init-file-debug
+        (setq use-package-verbose t
+              use-package-expand-minimally nil
+              use-package-compute-statistics t)
+      (setq use-package-verbose nil
+            use-package-expand-minimally t
+            use-package-compute-statistics nil)))
+
+  (eval-when-compile
+    (require 'use-package))
+#+END_SRC
+
+When running from byte compiled file, setup autoload for =use-package=
+so it can be used seamlessly. It also does package-initialize after
+load to make sure =package.el= is also initialized.
+
+#+BEGIN_SRC emacs-lisp
+  (unless (featurep 'use-package)
+    (require 'package)
+    (autoload 'use-package "use-package")
+    (eval-after-load "use-package" #'package-initialize))
+#+END_SRC
+
+Add [[https://github.com/emacsmirror/diminish][diminish]] and bind-key support to =use-package=
+
+#+BEGIN_SRC emacs-lisp
+  (use-package diminish)
+  (use-package bind-key)
+  ; Requires here should speed up the boot
+  (require 'diminish)
+  (require 'bind-key)
+#+END_SRC
 
 * GUI
 
@@ -267,8 +477,6 @@ Sane defaults
 (use-package epresent :ensure t)
 
 #+END_SRC
-
-
 * PDF-Tools
 some tweaks from http://pragmaticemacs.com/emacs/even-more-pdf-tools-tweaks/
 
@@ -310,8 +518,6 @@ some tweaks from http://pragmaticemacs.com/emacs/even-more-pdf-tools-tweaks/
       ;; save after adding comment
       (advice-add 'pdf-annot-edit-contents-commit :after 'sim/save-buffer-no-args)))
 #+END_SRC
-
-
 * Latex
 
 
@@ -392,9 +598,6 @@ some tweaks from http://pragmaticemacs.com/emacs/even-more-pdf-tools-tweaks/
     (add-hook 'LaTeX-mode-hook 'turn-on-org-cdlatex)
     (add-hook 'org-mode-hook 'turn-on-org-cdlatex))
 #+END_SRC
-
-
-
 * Org-mode
 General org-mode configuration
 
@@ -516,12 +719,6 @@ General org-mode configuration
   (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
 #+END_SRC
 
-** tufte in org-mode
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/tufte-org-mode")) 
-(require 'ox-tufte-latex)
-#+END_SRC
-
 ** GTD in org-mode
 
 | C-c C-W     | org-refile |
@@ -548,8 +745,6 @@ General org-mode configuration
 
   (setq org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
-
-
 * Ivy
 
 #+BEGIN_SRC emacs-lisp
@@ -572,20 +767,9 @@ General org-mode configuration
          ("C-r" . swiper))
   )
 #+END_SRC
-
-
 * Programming
 
 #+BEGIN_SRC emacs-lisp
-  (use-package elpy
-    :ensure t
-    :disabled
-    :init
-    (with-eval-after-load 'python
-      (elpy-enable)
-      (elpy-use-ipython)
-      (delete 'elpy-module-highlight-indentation elpy-modules)))
-
   ;; Snippets
   (use-package yasnippet
     :ensure t
