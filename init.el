@@ -1,48 +1,38 @@
-;; cop&mod from https://github.com/arecker/emacs.d
-(require 'package)
+;;; -*- lexical-binding: t; -*-
+;; stolen and modified from https://github.com/Kaali/vj-emacs-0x12
+;; Disable package initialize at startup. The commented line below is
+;; required for really disabling it.
 
-(setq package-archives
-      '(("gnu" . "https://elpa.gnu.org/packages/")
-	("melpa" . "https://melpa.org/packages/")
-	("org" . "https://orgmode.org/elpa/")))
+;; (package-initialize)
+(setq package-enable-at-startup nil)
 
-(setq debug-on-error 't
-      network-security-level 'low)
+(defun sim/file-modification-time (filename)
+  "The modification time of a file."
+  (if (file-exists-p filename)
+      (file-attribute-modification-time (file-attributes filename))
+    '(0 0 0 0)))
 
-(defun sim/package-init ()
-  "Initialize the package manager and install use-package."
-  (package-initialize)
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package)))
+(setq readme-org "~/.emacs.d/README.org"
+      readme-elc (concat (file-name-sans-extension readme-org) ".elc"))
 
-(defun sim/load-config ()
-  "Tangle configuration and load it"
-  (let ((config (concat (file-name-as-directory user-emacs-directory) "README.org")))
-    (if (file-exists-p config)
-	(org-babel-load-file config)
-      (warn (concat config " not found - not loading")))))
+(defun readme-elc-is-old ()
+  (time-less-p (sim/file-modification-time readme-elc)
+               (sim/file-modification-time readme-org)))
 
-(sim/package-init)
-(sim/load-config)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(org-default-notes-file (concat org-directory "/notes.org"))
- '(org-directory "~/org")
- '(org-export-html-postamble nil)
- '(org-hide-leading-stars t)
- '(org-mobile-directory "~/org")
- '(org-startup-folded (quote overview))
- '(org-startup-indented t)
- '(package-selected-packages
-   (quote
-    (company-quickhelp company-math cmake-mode clang-format company-c-headers company-irony company-statistics flycheck-irony flycheck swiper ob-ipython org-noter org-download noflet org-bullets company-auctex epresent rainbow-mode which-key flyspell-correct-ivy autopair multi-term org-pdfview pdf-tools origami multiple-cursors hungry-delete beacon undo-tree ace-window powerline doom-themes use-package))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(aw-leading-char-face ((t (:inherit ace-jump-face-foreground :height 3.0)))))
+(defun recompile-readme-org ()
+  (interactive)
+  (let ((old-init-file-debug init-file-debug)
+        (init-file-debug nil))
+    (require 'ob-tangle)
+    (org-babel-load-file readme-org t)
+    (setq init-file-debug old-init-file-debug)))
+
+;; If readme.org is newer than readme.elc, then load .org and show a
+;; message that elc is out of date. Don't load elc anyway if in
+;; init-file-debug mode
+(if (or init-file-debug (readme-elc-is-old))
+    (progn
+      (require 'ob-tangle)
+      (org-babel-load-file readme-org)
+      (message "readme.elc older than readme.org. Update with M-x recompile-readme-org"))
+  (load-file readme-elc))
