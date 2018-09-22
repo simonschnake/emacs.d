@@ -1,3 +1,115 @@
+;;; -*- lexical-binding: t; -*-
+
+(defconst emacs-start-time (current-time))
+
+(defun display-startup-echo-area-message ())
+
+(add-hook 'after-init-hook
+          `(lambda ()
+             (let ((elapsed
+                    (float-time
+                     (time-subtract (current-time) emacs-start-time))))
+               (message "Loading %s...done (%.3fs) [after-init]"
+                        ,load-file-name elapsed))) t)
+
+(defvar original-gc-cons-threshold gc-cons-threshold)
+(defvar original-gc-cons-percentage gc-cons-percentage)
+
+(setq gc-cons-threshold 402653184
+      gc-cons-percentage 0.6)
+
+(add-hook 'after-init-hook
+          `(lambda () (setq gc-cons-threshold original-gc-cons-threshold
+                            gc-cons-percentage original-gc-cons-percentage)) t)
+
+(defvar file-name-handler-alist-old file-name-handler-alist)
+(setq file-name-handler-alist nil)
+(add-hook 'after-init-hook
+          `(lambda () (setq file-name-handler-alist file-name-handler-alist-old)) t)
+
+(setq initial-frame-alist '((fullscreen . maximized)))
+
+(require 'tls)
+(setq tls-checktrust t)
+
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file t)
+
+(eval-and-compile
+  (setq load-prefer-newer t
+        package-user-dir "~/.emacs.d/elpa"
+        package--init-file-ensured t
+        package-enable-at-startup nil)
+
+  (unless (file-directory-p package-user-dir)
+    (make-directory package-user-dir t))
+
+  (eval-and-compile
+    (setq load-path (append load-path (directory-files package-user-dir t "^[^.]" t))))
+
+  ;; Add packages to info, required because we haven't run
+  ;; package-initialize
+  (with-eval-after-load "info"
+    (info-initialize)
+    (dolist (dir (directory-files package-user-dir))
+      (let ((fdir (concat (file-name-as-directory package-user-dir) dir)))
+        (unless (or (member dir '("." ".." "archives" "gnupg"))
+                    (not (file-directory-p fdir))
+                    (not (file-exists-p (concat (file-name-as-directory fdir) "dir"))))
+          (add-to-list 'Info-directory-list fdir))))))
+
+(defun vj--setup-package-el (&optional _)
+  (require 'package)
+  ;; Make package-installed-p only check the user package dir for org-mode
+  ;; to make it skip the bundled org-mode.
+  (defun vj--package-installed-p (orig-fn &rest args)
+    (if (eq (car args) 'org)
+        (if (file-expand-wildcards (concat package-user-dir "/org-[0-9]*")) t nil)
+      (apply orig-fn args)))
+  (advice-add 'package-installed-p :around #'vj--package-installed-p)
+
+  (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
+                      (not (gnutls-available-p))))
+         (proto (if no-ssl "http" "https")))
+    (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
+    (add-to-list 'package-archives (cons "org" (concat proto "://orgmode.org/elpa/")) t)
+    (setq package-archive-priorities '(("org" . 3)
+                                       ("melpa" . 2)
+                                       ("gnu" . 1)))))
+
+(advice-add #'package-initialize :before #'vj--setup-package-el)
+
+(eval-when-compile
+  (package-initialize)
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'use-package)))
+
+;; In init-file-debug mode, enable verbosity and statistics for use-package.
+(eval-and-compile
+  (setq use-package-always-ensure t)
+  (if init-file-debug
+      (setq use-package-verbose t
+            use-package-expand-minimally nil
+            use-package-compute-statistics t)
+    (setq use-package-verbose nil
+          use-package-expand-minimally t
+          use-package-compute-statistics nil)))
+
+(eval-when-compile
+  (require 'use-package))
+
+(unless (featurep 'use-package)
+  (require 'package)
+  (autoload 'use-package "use-package")
+  (eval-after-load "use-package" #'package-initialize))
+
+(use-package diminish)
+(use-package bind-key)
+; Requires here should speed up the boot
+(require 'diminish)
+(require 'bind-key)
+
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -281,14 +393,9 @@
     (advice-add 'pdf-annot-edit-contents-commit :after 'sim/save-buffer-no-args)))
 
 (use-package company-auctex
-:ensure t  
-:defer t
+  :defer 5
   :init
-  (add-hook 'LaTeX-mode-hook 'company-auctex-init))
-
-(use-package tex
-  :defer t
-  :init
+  (add-hook 'LaTeX-mode-hook 'company-auctex-init)
   (setq TeX-auto-save t
         TeX-parse-self t
         TeX-syntactic-comment t
@@ -351,7 +458,7 @@ the automatic filling of the current paragraph."
             ("HTML Viewer" "open %o")))))
 
 (use-package cdlatex
-  :ensure t
+  :defer 3
   :config
   (add-hook 'LaTeX-mode-hook 'turn-on-org-cdlatex)
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex))
@@ -442,10 +549,6 @@ the automatic filling of the current paragraph."
 ;(use-package org-babel)
 
 
-(use-package org-habit)
-
-(use-package ob-python)
-
 (use-package ob-ipython
 :ensure t
   :config
@@ -471,9 +574,6 @@ the automatic filling of the current paragraph."
 
 ;;; display/update images in the buffer after I evaluate
 (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
-
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/tufte-org-mode")) 
-(require 'ox-tufte-latex)
 
 (setq org-agenda-files '("~/gtd/inbox.org"
                          "~/gtd/gtd.org"
@@ -513,15 +613,6 @@ the automatic filling of the current paragraph."
   :bind (("C-s" . swiper)
          ("C-r" . swiper))
   )
-
-(use-package elpy
-  :ensure t
-  :disabled
-  :init
-  (with-eval-after-load 'python
-    (elpy-enable)
-    (elpy-use-ipython)
-    (delete 'elpy-module-highlight-indentation elpy-modules)))
 
 ;; Snippets
 (use-package yasnippet

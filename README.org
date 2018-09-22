@@ -523,14 +523,9 @@ some tweaks from http://pragmaticemacs.com/emacs/even-more-pdf-tools-tweaks/
 
 #+BEGIN_SRC emacs-lisp
   (use-package company-auctex
-  :ensure t  
-  :defer t
+    :defer 5
     :init
-    (add-hook 'LaTeX-mode-hook 'company-auctex-init))
-
-  (use-package tex
-    :defer t
-    :init
+    (add-hook 'LaTeX-mode-hook 'company-auctex-init)
     (setq TeX-auto-save t
           TeX-parse-self t
           TeX-syntactic-comment t
@@ -593,7 +588,7 @@ some tweaks from http://pragmaticemacs.com/emacs/even-more-pdf-tools-tweaks/
               ("HTML Viewer" "open %o")))))
 
   (use-package cdlatex
-    :ensure t
+    :defer 3
     :config
     (add-hook 'LaTeX-mode-hook 'turn-on-org-cdlatex)
     (add-hook 'org-mode-hook 'turn-on-org-cdlatex))
@@ -687,10 +682,6 @@ General org-mode configuration
 
   ;(use-package org-babel)
 
-
-  (use-package org-habit)
-
-  (use-package ob-python)
 
   (use-package ob-ipython
   :ensure t
