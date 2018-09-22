@@ -3,35 +3,37 @@
 #+AUTHOR: Simon Schnake
 #+OPTIONS: toc:4 h:4
 
+* Things to add
+- cdlatex in org-mode
+- =C-h= as an alternative to Backspace
+- =M-h= as an alternative to =M-BACK=
+- proselint
+- multiple-cursors
+
 * Intro
 
-Emacs Config of Mid 2018.
+This my emacs-config. It is ~not~ stable at the moment
+It is based on [[https://github.com/Kaali/vj-emacs-0x12][vj-emacs-0x12]].
 
-Main features of this configuration is:
-
-1. ob-tangle to create a literate configuration file
-2. use-package to handle packages
-3. bind-key for shortcuts
-4. use of Ivy
-5. try to keep startup fast
-
-Experimental setup for lsp-mode to use language servers as much as possible
+Key features will be:
+- ivy
+- fast switching between dark and light theme with gtk also changing
+- very good python ide
+- advanced org-mode
+  - ob-ipython
+  - tools to write a tuftle styled latex in org-mode
+  - bibliography managment
+  - good support fort editing org src parts without =C-'=
+- ipython jupyter notebook handling
 
 ** Requirements
 
-Requires Emacs 26. Only tested on ArchLinux.
-
-Some packages might require external tools such as git, rg, etc.
+Here i will add all additional tools, you need for full usage
 
 ** Installation
 
-Keep it simple. Clone as =/.emacs.d= and done.
-External Packages to install are listed below:
-
-- 
-* Keybindings
+Keep it simple. Clone as =~/.emacs.d= and
 * Bootstrap Configuration
-
 ** Benchmark Emacs startup
 
 It's easier to optimize Emacs startup time when I have some data
@@ -196,140 +198,115 @@ Add [[https://github.com/emacsmirror/diminish][diminish]] and bind-key support t
   (require 'bind-key)
 #+END_SRC
 
-* GUI
+* Global configuration
+** Settings
+*** Disable byte compile warnings
+ Disable certain byte compiler warnings to cut down on the noise. This is a personal choice and can be removed
+ if you would like to see any and all byte compiler warnings.
 
-#+BEGIN_SRC emacs-lisp
-  (menu-bar-mode -1)
-  (tool-bar-mode -1)
-  (scroll-bar-mode -1)
-  (column-number-mode t)
-
-  ;; use dark theme for dark terminal for visible colours
-  (if (display-graphic-p)
-      (use-package doom-themes
-        :ensure t
-        :config
-        (progn
-          (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-                doom-themes-enable-italic t) ; if nil, italics is universally disabled
-          (load-theme 'doom-one-light t)
-          (doom-themes-visual-bell-config)
-          (doom-themes-visual-bell-config)
-          (doom-themes-visual-bell-config)))
-    (use-package ample-theme
-      :init (progn (load-theme 'ample t t)
-                   (load-theme 'ample-flat t t)
-                   (load-theme 'ample-light t t)
-                   (enable-theme 'ample-flat))
-      :defer t
-      :ensure t))
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; Powerline theme
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; powerline theme where the modes are on the right side.
-  (use-package powerline
-    :ensure t
-    :config
-    (defun powerline-right-theme ()
-      "Setup a mode-line with major and minor modes on the right side."
-      (interactive)
-      (setq-default mode-line-format
-                    '("%e"
-                      (:eval
-                       (let* ((active (powerline-selected-window-active))
-                              (mode-line-buffer-id (if active 'mode-line-buffer-id 'mode-line-buffer-id-inactive))
-                              (mode-line (if active 'mode-line 'mode-line-inactive))
-                              (face0 (if active 'powerline-active0 'powerline-inactive0))
-                              (face1 (if active 'powerline-active1 'powerline-inactive1))
-                              (face2 (if active 'powerline-active2 'powerline-inactive2))
-                              (separator-left (intern (format "powerline-%s-%s"
-                                                              (powerline-current-separator)
-                                                              (car powerline-default-separator-dir))))
-                              (separator-right (intern (format "powerline-%s-%s"
-                                                               (powerline-current-separator)
-                                                               (cdr powerline-default-separator-dir))))
-                              (lhs (list (powerline-raw "%*" face0 'l)
-                                         (powerline-buffer-size face0 'l)
-                                         (powerline-buffer-id `(mode-line-buffer-id ,face0) 'l)
-                                         (powerline-raw " ")
-                                         (funcall separator-left face0 face1)
-                                         (powerline-narrow face1 'l)
-                                         (powerline-vc face1)))
-                              (center (list (powerline-raw global-mode-string face1 'r)
-                                            (powerline-raw "%4l" face1 'r)
-                                            (powerline-raw ":" face1)
-                                            (powerline-raw "%3c" face1 'r)
-                                            (funcall separator-right face1 face0)
-                                            (powerline-raw " ")
-                                            (powerline-raw "%6p" face0 'r)
-                                            (powerline-hud face2 face1)
-                                            ))
-                              (rhs (list (powerline-raw " " face1)
-                                         (funcall separator-left face1 face2)
-                                         (when (and (boundp 'erc-track-minor-mode) erc-track-minor-mode)
-                                           (powerline-raw erc-modified-channels-object face2 'l))
-                                         (powerline-major-mode face2 'l)
-                                         (powerline-process face2)
-                                         (powerline-raw " :" face2)
-                                         (powerline-minor-modes face2 'l)
-                                         (powerline-raw " " face2)
-                                         (funcall separator-right face2 face1)
-                                         ))
-                              )
-                         (concat (powerline-render lhs)
-                                 (powerline-fill-center face1 (/ (powerline-width center) 2.0))
-                                 (powerline-render center)
-                                 (powerline-fill face1 (powerline-width rhs))
-                                 (powerline-render rhs)))))))
-    (powerline-right-theme)
-    )
-
-#+END_SRC
-
-* General Config
-  
-Sane defaults
  #+BEGIN_SRC emacs-lisp
+ (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
+ #+END_SRC
 
-   ;; turn of startup message
-   (setq inhibit-startup-message t)
-   ;; turn on highlight matching brackets when cursor is on one
-   (show-paren-mode t)
-   ;; Overwrite region selected
-   (delete-selection-mode t)
-   ;; Show column numbers by default
-   (setq column-number-mode t)
-   ;; Prevent emacs from creating a bckup file filename~
-   (setq make-backup-files nil)
-   ;; Settings for searching
-   (setq-default case-fold-search t ;case insensitive searches by default
-                 search-highlight t) ;hilit matches when searching
-   ;; Highlight the line we are currently on
-   (global-hl-line-mode t)
+*** Personal stuff
+    Pretty self explanatory: just setting some personal details about who's using Emacs.
+    #+begin_src emacs-lisp
+    (setq user-full-name "Simon Schnake"
+          user-mail-address "schnake.simon@gmail.com")
+    #+end_src
 
-   ;; We don't want to type yes and no all the time so, do y and n
-   (defalias 'yes-or-no-p 'y-or-n-p)
-   ;; Disable the horrid auto-save
-   (setq auto-save-default nil)
+*** Deactivation
+    Deactivation of functionality I don't tend to use:
+    - Backup files
+    - Autosaving
+    - Start-up message
+    - Audible bell
+    #+begin_src emacs-lisp
+    (setq
+      make-backup-files nil
+      auto-save-default nil
+      inhibit-startup-message t
+      ring-bell-function 'ignore)
+    #+end_src
+*** Hide stuff
+    Hide various elements of the Emacs GUI:
+    - toolbar
+    - tooltips
+    - scrollbar
+    - menubar
+    - blinking cursor
+    #+begin_src emacs-lisp
+      (dolist
+          (mode
+           '(tool-bar-mode
+             tooltip-mode
+             scroll-bar-mode
+             menu-bar-mode
+             blink-cursor-mode))
+        (funcall mode 0))
+    #+end_src
 
-   ;; Don't ring the bell
-   (setq ring-bell-function 'ignore)
+*** UTF-8
+    Configure Emacs for full UTF-8 compatability
+    #+begin_src emacs-lisp
+    (set-charset-priority 'unicode)
+    (setq locale-coding-system   'utf-8)
+    (set-terminal-coding-system  'utf-8)
+    (set-keyboard-coding-system  'utf-8)
+    (set-selection-coding-system 'utf-8)
+    (prefer-coding-system        'utf-8)
+    (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
+    #+end_src
 
-#+END_SRC
+*** Global ~:ensure~ for ~use-package~ statements
+    ~use-package~ has an ~:ensure~ keyword which dictates whether packages are installed or not.
+    As most of my ~use-package~ configurations are for external packages, I set this to always ensure.
+    Then, in cases where I don't want this to be true, I simply set ~:ensure nil~
+    #+begin_src emacs-lisp
+    (setq use-package-always-ensure t)
+    #+end_src
 
+*** Discard customizations
+    Emacs has a comprehensive customization system that allows configuration changes interactively.
+    Personally, I opt to ensure all the configuration I use for my environment is fully declarative.
+    As such, the following configuration sets the ~custom-file~ to be a random temporary file created each time Emacs starts.
+    This means any customizations made interactively are discarded entirely.
+    #+begin_src emacs-lisp
+    (setq custom-file (make-temp-file ""))
+    #+end_src
+
+*** Just use 'y' or 'n' instead of 'yes' or 'no'
+    You'll find ~yes-or-no~ prompts coming up in Emacs a lot.
+    I'd much rather just type ~y~ or ~n~ than ~yes~ or ~no~ every time...
+    #+begin_src emacs-lisp
+    (fset 'yes-or-no-p 'y-or-n-p)
+    #+end_src
+
+*** Delete trailing whitespace on save
+    Get rid of any trailing whitespace upon saving
+    #+begin_src emacs-lisp
+    (add-hook 'before-save-hook 'delete-trailing-whitespace)
+    #+end_src
+*** Follow symlinks in version control
+    If there are any symlinks in version controlled repositories, follow them
+    #+begin_src emacs-lisp
+    (setq vc-follow-symlinks t)
+    #+end_src
+
+*** Configure FlySpell to use aspell
+    I use ~aspell~, so this simply sets [[https://www.emacswiki.org/emacs/FlySpell][Flyspell]] to use it and passes a couple extra arguments
+    #+begin_src emacs-lisp
+    (setq ispell-program-name "aspell")
+    (setq ispell-extra-args '("--sug-mode=ultra" "--lang=en_US"))
+    #+end_src
+
+*** Copy&Paste inside terminal
+Enable terminal emacs to copy and paste from system clipboard
+Note: this uses =C-c= before the usual =C-w=, =M-w= and =C-y=
+From: https://stackoverflow.com/questions/64360/how-to-copy-text-from-emacs-to-another-application-on-linux
+you need to install xsel
 #+BEGIN_SRC emacs-lisp
-;; Non-nil means draw block cursor as wide as the glyph under it.
-;; For example, if a block cursor is over a tab, it will be drawn as
-;; wide as that tab on the display.
-(setq x-stretch-cursor t)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Enable terminal emacs to copy and paste from system clipboard
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Note: this uses C-c before the usual C-w, M-w, and C-ya
-;; From: https://stackoverflow.com/questions/64360/how-to-copy-text-from-emacs-to-another-application-on-linux
-;; you need to install xsel (sudo apt install xsel)
-(defun my-copy-to-xclipboard(arg)a
+(defun my-copy-to-xclipboard(arg)
   (interactive "P")
   (cond
    ((not (use-region-p))
@@ -359,235 +336,176 @@ Sane defaults
 (global-set-key (kbd "C-c C-w") 'my-cut-to-xclipboard)
 (global-set-key (kbd "C-c M-w") 'my-copy-to-xclipboard)
 (global-set-key (kbd "C-c C-y") 'my-paste-from-xclipboard)
-
-                                        ; undo tree
-(use-package undo-tree
-  :ensure t
-  :init
-  (global-undo-tree-mode))
-
-
-;; use avy to move fast inside a file
-
-(use-package avy
-  :ensure t
-  :bind ("M-s" . avy-goto-word-1)) ;; changed from char as per jcs
-; flashes the cursor's line when you scroll
-(use-package beacon
-  :ensure t
-  :config
-  (beacon-mode 1)
-; (setq beacon-color "#666600")
-  )
-
-; deletes all the whitespace when you hit backspace or delete
-(use-package hungry-delete
-  :ensure t
-  :config
-  (global-hungry-delete-mode))
-
-
-(use-package multiple-cursors
-  :ensure t)
-
-;origami folding
-(use-package origami
-  :ensure t)
-
-(use-package windmove
-  :ensure t
-  :bind (("S-<left>" . windmove-left)
-         ("S-<right>" . windmove-right)
-         ("S-<up>" . windmove-up)
-         ("S-<down>" . windmove-down)
-         )
-  )
-
-(use-package multi-term
-  :ensure t
-  
-  :bind (("C-x m" . multi-term-next)
-	 ("C-x M" . multi-term))
-  :config '(setq multi-term-program "/bin/zsh"))
-
-;; Dict.cc in Emacs
-(use-package dictcc
-  :commands dictcc
-  :bind (("C-x RET ," . dictcc)
-	 ("C-x RET ." . dictcc-at-point))
-  :custom
-  (dictcc-source-lang "de")
-  (dictcc-destination-lang "en")
-  (dictcc-completion-backend 'ivy))
-
-;; Automatically at closing brace, bracket and quote
-(use-package autopair
-  :ensure t
-  :config
-  (autopair-global-mode t)
-  )
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Flyspell Mode for Spelling Corrections
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(use-package flyspell
-  :ensure t
-  :init
-  (setq flyspell-issue-welcome-flag nil)
-  :config
-  (defun flyspell-check-next-highlighted-word ()
-    "Custom function to spell check next highlighted word."
-    (interactive)
-    (flyspell-goto-next-error)
-    (ispell-word))
-
-  (global-set-key (kbd "<f7>") 'flyspell-buffer)
-  (global-set-key (kbd "<f8>") 'flyspell-correct-previous)
-  (global-set-key (kbd "<f9>") 'flyspell-correct-previous)
-
-  (add-hook 'text-mode-hook #'flyspell-mode)
-  (add-hook 'prog-mode-hook #'flyspell-prog-mode)
-  )
-(use-package flyspell-correct-ivy
-  :ensure t
-  :after flyspell)
-
-(use-package which-key
-:ensure t
-:config (which-key-mode))
-
-(use-package rainbow-mode
-:ensure t)
-
-(use-package epresent :ensure t)
-
 #+END_SRC
-* PDF-Tools
-some tweaks from http://pragmaticemacs.com/emacs/even-more-pdf-tools-tweaks/
-
-| C-s        | search file     |
-| h          | annot-highlight |
-| t          | annot-text      |
-| D          | annot-delet     |
-| <return>   | annot-commit    |
-| <S-return> | annot-newline   |
+*** stretch-cursor
+Non-nil means draw block cursor as wide as the glyph under it.
+For example, if a block cursor is over a tab, it will be drawn as
+wide as that tab on the display.
+#+BEGIN_SRC emacs-lisp
+(setq x-stretch-cursor t)
+#+END_SRC
+*** Show-Paren-Mode
+show-paren-mode allows one to see matching pairs of parentheses and
+other characters.  When point is on the opening character of one of
+the paired characters, the other is highlighted.  When the point is
+after the closing character of one of the paired characters, the other
+is highlighted.
+#+BEGIN_SRC emacs-lisp
+  (show-paren-mode 1)
+#+END_SRC
+*** show-paren-mode
+turn on highlight matching brackets when cursor is on one
+#+BEGIN_SRC emacs-lisp
+(show-paren-mode t)
+#+END_SRC
+** Keyboard Shortcuts
 
 #+BEGIN_SRC emacs-lisp
-  ;; wrapper for save-buffer ignoring arguments
-  (defun sim/save-buffer-no-args ()
-    "Save buffer ignoring arguments"
-    (save-buffer))
+;; Global Keyboard Shortcuts
+;; Set help to C-?
+(global-set-key (kbd "C-?") 'help-command)
+;; Set mark paragraph to M-?
+(global-set-key (kbd "M-?") 'mark-paragraph)
+;; Set backspace to C-h
+(global-set-key (kbd "C-h") 'delete-backward-char)
+;; Set backspace word to M-h
+(global-set-key (kbd "M-h") 'backward-kill-word)
+;; Use meta+tab word completion
+(global-set-key (kbd "M-TAB") 'dabbrev-expand)
+;; Easy undo key
+(global-set-key (kbd "C-/") 'undo)
+;; Comment or uncomment the region
+(global-set-key (kbd "C-c ;") 'comment-or-uncomment-region)
+#+END_SRC
+** Appearance
+   Configuration related to the appearance of Emacs
+*** Centered buffers
+    A really simple package that will centre your buffer contents in the frame.
+    Purely cosmetic, but I do find it helps with focus from time to time.
+    If I'm working on something that only needs one buffer, I'll usually centre it.
+    I have this bound to a key in my ~toggle-mode~ hydra so I can switch it on/off easily.
+    #+begin_src emacs-lisp
+    (use-package centered-window)
+    #+end_src
 
+*** Current line highlighting
+    Highlights the current line of the point.
+    Just helps to visualise where you are in the buffer.
+    I turn it on globally, but explicitly turn it off where I don't deem it necessary.
+    #+begin_src emacs-lisp
+    (global-hl-line-mode t)
+
+    (make-variable-buffer-local 'global-hl-line-mode)
+    (defvar my-ghd-modes '(
+                           shell-mode-hook
+                           git-commit-mode-hook
+                           term-mode-hook
+                          )
+      "Modes to ensure global-hl-line-mode is disabled for.")
+      (dolist (m my-ghd-modes)
+	(add-hook m (lambda () (setq global-hl-line-mode nil))))
+    #+end_src
+*** Rainbow Delimiters
+    So handy! This will colourize delimiters differently based on their depth.
+    Really helps you not get burried when you're in deep.
+    #+begin_src emacs-lisp
+    (use-package rainbow-delimiters
+      :hook
+      (prog-mode . rainbow-delimiters-mode)
+      (yaml-mode . rainbow-delimiters-mode))
+    #+end_src
+*** Theme
+/Fashion First!/
+Needs =xprop= to switch between dark and light gnome bar theme
+#+begin_src emacs-lisp
+      (use-package
+       doom-themes
+       :if window-system
+       :config
+       (defadvice load-theme (before theme-dont-propagate activate)
+         (mapc #'disable-theme custom-enabled-themes))
+       (defun doom-theming (theme-name)
+         (progn
+           (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+                 doom-themes-enable-italic t) ; if nil, italics is universally disabled
+           (load-theme theme-name t)
+           (doom-themes-visual-bell-config)
+           (doom-themes-neotree-config)
+           (doom-themes-treemacs-config)
+           (doom-themes-org-config)))
+
+       ;; https://www.emacswiki.org/emacs/frame-fns.el
+       (defun get-frame-name (&optional frame)
+         "Return the string that names FRAME (a frame).  Default is selected frame."
+         (unless frame (setq frame  (selected-frame)))
+         (if (framep frame)
+             (cdr (assq 'name (frame-parameters frame)))
+           (error "Function `get-frame-name': Argument not a frame: `%s'" frame)))
+
+       ;; from https://nicolas.petton.fr/blog/emacs-dark-window-decoration.html
+       (defun shade-frame-gnome (shade)
+         (let ((frame-name (get-frame-name (selected-frame))))
+           (call-process-shell-command
+            (concat "xprop -f _GTK_THEME_VARIANT 8u -set _GTK_THEME_VARIANT \""
+                    shade "\" -name \""
+                    frame-name
+                    "\""))))
+
+       (defun light () (interactive) (progn
+                                       (shade-frame-gnome "light")
+                                       (doom-theming 'doom-one-light)))
+       (defun dark () (interactive) (progn
+                                      (shade-frame-gnome "dark")
+                                      (doom-theming 'doom-one)))
+
+       (light))
+#+end_src
+*** Modeline
+We use telephone-line because, it's fast to load.
+Config coming later
+#+BEGIN_SRC emacs-lisp
+    (use-package telephone-line
+      :config (progn
+		(setq telephone-line-lhs
+		      '((evil   . (telephone-line-evil-tag-segment))
+			(accent . (telephone-line-vc-segment
+				   telephone-line-erc-modified-channels-segment
+				   telephone-line-process-segment))
+			(nil    . (telephone-line-minor-mode-segment
+				   telephone-line-buffer-segment))))
+		(setq telephone-line-rhs
+		      '((nil    . (telephone-line-misc-info-segment))
+			(accent . (telephone-line-major-mode-segment))
+			(evil   . (telephone-line-airline-position-segment))))
+		(telephone-line-mode 1)))
+#+END_SRC
+* Major modes
+** PDF-tools
+#+BEGIN_SRC emacs-lisp
   (use-package pdf-tools
-    :ensure t
-    :config
-    ;; initialise
-    (pdf-tools-install)
-    (setq-default pdf-view-display-size 'fit-page)
-    ;; automatically annotate highlights
-    (setq pdf-annot-activate-created-annotations t)
-    ;; use isearch instead of swiper
-    (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
-    ;; turn off cua so copy works
-    (add-hook 'pdf-view-mode-hook (lambda () (cua-mode 0)))
-    ;; more fine-grained zooming
-    (setq pdf-view-resize-factor 1.1)
-    ;; keyboard shortcuts
-    (define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
-    (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
-    (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete)
-    ;; wait until map is available
-    (with-eval-after-load "pdf-annot"
-      (define-key pdf-annot-edit-contents-minor-mode-map (kbd "<return>") 'pdf-annot-edit-contents-commit)
-      (define-key pdf-annot-edit-contents-minor-mode-map (kbd "<S-return>") 'newline)
-      ;; save after adding comment
-      (advice-add 'pdf-annot-edit-contents-commit :after 'sim/save-buffer-no-args)))
+    :defer t
+    :mode ("\\.pdf\\'" . pdf-view-mode)
+    :config (pdf-tools-install))
 #+END_SRC
-* Latex
 
-
+** Python
 #+BEGIN_SRC emacs-lisp
-  (use-package company-auctex
-    :defer 5
-    :init
-    (add-hook 'LaTeX-mode-hook 'company-auctex-init)
-    (setq TeX-auto-save t
-          TeX-parse-self t
-          TeX-syntactic-comment t
-          TeX-PDF-mode t
-          ;; Synctex support
-          TeX-source-correlate-mode t
-          TeX-source-correlate-start-server nil
-          ;; Setup reftex style (RefTeX is supported through extension)
-          reftex-use-fonts t
-          ;; Don't insert line-break at inline math
-          LaTeX-fill-break-at-separators nil)
-    (defvar latex-nofill-env '("equation"
-                               "equation*"
-                               "align"
-                               "align*"
-                               "tabular"
-                               "tikzpicture")
-      "List of environment names in which `auto-fill-mode' will be inhibited.")
-    (add-hook 'LaTeX-mode-hook 'latex/auto-fill-mode)
-    (add-hook 'LaTeX-mode-hook 'latex-math-mode)
-    (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+  (setq-default python-indent 4)
+  (setq-default python-indent-offset 4)
+  (add-hook 'python-mode-hook
+	    (lambda ()
+	      (setq tab-width 4)))
+  (setq-default pdb-command-name "python -m pdb")
 
-    :config
-    ;; (defun my/latex-mode-defaults ()
-    ;;   (visual-line-mode +1)
-    ;;   (yas-minor-mode -1))
-
-    (defun latex//autofill ()
-      "Check whether the pointer is ucrrently inside on the
-  environments described in `latex-nofill-env' and if so, inhibits
-  the automatic filling of the current paragraph."
-      (let ((do-auto-fill t)
-            (current-environment "")
-            (level 0))
-        (while (and do-auto-fill (not (string= current-environment "document")))
-          (setq level (1+ level)
-                current-environment (LaTeX-current-environment level)
-                do-auto-fill (not (member current-environment latex-nofill-env))))
-        (when do-auto-fill
-          (do-auto-fill))))
-
-    (defun latex/auto-fill-mode ()
-      "Toggle uato-fill-mode using the custom auto-fill function."
-      (interactive)
-      (auto-fill-mode)
-      (setq auto-fill-function 'latex//autofill))
-
-    ;; (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)
-    ;; (add-to-list 'auto-mode-alist '("\\.l[gh]s\\'" . tex-mode))
-
-    (when (eq system-type 'darwin)
-      (setq TeX-view-program-selection
-            '((output-dvi "DVI Viewer")
-              (output-pdf "PDF Viewer")
-              (output-html "HTML Viewer")))
-
-      (setq TeX-view-program-list
-            '(("DVI Viewer" "open %o")
-              ("PDF Viewer" "open %o")
-              ("HTML Viewer" "open %o")))))
-
-  (use-package cdlatex
-    :defer 3
-    :config
-    (add-hook 'LaTeX-mode-hook 'turn-on-org-cdlatex)
-    (add-hook 'org-mode-hook 'turn-on-org-cdlatex))
+  (use-package yapfify
+    :hook (python-mode yapf-mode))
 #+END_SRC
-* Org-mode
+** Org-mode
 General org-mode configuration
 
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "C-c c") 'org-capture)
   (global-set-key (kbd "C-c a") 'org-agenda)
-
-  (define-key org-mode-map (kbd "C-c C-.") 'org-time-stamp-inactive)
-
-  (setq org-modules (cons 'org-habit org-modules))
 
   (use-package org-bullets
     :ensure t
@@ -623,17 +541,17 @@ General org-mode configuration
                       (org-agenda-overriding-header "ALL normal priority tasks:"))))
            ((org-agenda-compact-blocks t)))))
 
-  (defadvice org-capture-finalize 
-      (after delete-capture-frame activate)  
-    "Advise capture-finalize to close the frame."  
-    (if (equal "capture" (frame-parameter nil 'name))  
+  (defadvice org-capture-finalize
+      (after delete-capture-frame activate)
+    "Advise capture-finalize to close the frame."
+    (if (equal "capture" (frame-parameter nil 'name))
         (delete-frame)))
 
-  (defadvice org-capture-destroy 
-      (after delete-capture-frame activate)  
-    "Advise capture-destroy to close the frame."  
-    (if (equal "capture" (frame-parameter nil 'name))  
-        (delete-frame)))  
+  (defadvice org-capture-destroy
+      (after delete-capture-frame activate)
+    "Advise capture-destroy to close the frame."
+    (if (equal "capture" (frame-parameter nil 'name))
+        (delete-frame)))
 
   (use-package noflet
     :ensure t )
@@ -646,7 +564,7 @@ General org-mode configuration
     (noflet ((switch-to-buffer-other-window (buf) (switch-to-buffer buf)))
       (org-capture)))
 
-  (use-package org-download 
+  (use-package org-download
     :ensure t
     :after org
     :config
@@ -667,19 +585,8 @@ General org-mode configuration
 
   ;(use-package org-babel)
 
-
   (use-package ob-ipython
-  :ensure t
-    :config
-    ;; for now I am disabling elpy only ob-ipython minor mode
-    ;; what we should actually do, is just to ensure that
-    ;; ob-ipython's company backend comes before elpy's (TODO)
-    (add-hook 'ob-ipython-mode-hookp
-              (lambda ()
-                (elpy-mode 0)
-                (company-mode 1)))
-  ;  (add-to-list 'company-backends 'company-ob-ipython)
-    (add-to-list 'org-latex-minted-langs '(ipython "python")))
+    :defer 3)
 
   ;; active Babel languages
   (org-babel-do-load-languages
@@ -695,7 +602,7 @@ General org-mode configuration
   (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
 #+END_SRC
 
-** GTD in org-mode
+*** GTD in org-mode
 
 | C-c C-W     | org-refile |
 | C-c C-x C-a | org-archive-subtree-default |
@@ -721,96 +628,268 @@ General org-mode configuration
 
   (setq org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
-* Ivy
 
+* Minor Modes
+** Flymake
 #+BEGIN_SRC emacs-lisp
-(use-package ivy
-  :ensure t
-  :config
-  (require 'ivy)
-  (ivy-mode t)
-  (setq ivy-use-virtual-buffers t)
-  (setq enable-recursive-minibuffers t)
-  (setq ivy-wrap t)
-  (global-set-key (kbd "C-c C-r") 'ivy-resume)
-  ;; Show #/total when scrolling buffers
-  (setq ivy-count-format "%d/%d ")
-  )
-
-(use-package swiper
-  :ensure t
-  :bind (("C-s" . swiper)
-         ("C-r" . swiper))
-  )
+  (use-package flymake
+    :diminish)
 #+END_SRC
-* Programming
+** Ivy
 
 #+BEGIN_SRC emacs-lisp
-  ;; Snippets
-  (use-package yasnippet
-    :ensure t
-    :diminish yas-minor-mode
-    :init (yas-global-mode t))
-
-  ;; Autocomplete
-  (use-package company
-    :ensure t
-    :defer 10
-    :diminish company-mode
-    :bind (:map company-active-map
-                ("M-j" . company-select-next)
-                ("M-k" . company-select-previous))
-    :preface
-    ;; enable yasnippet everywhere
-    (defvar company-mode/enable-yas t
-      "Enable yasnippet for all backends.")
-    (defun company-mode/backend-with-yas (backend)
-      (if (or 
-           (not company-mode/enable-yas) 
-           (and (listp backend) (member 'company-yasnippet backend)))
-          backend
-        (append (if (consp backend) backend (list backend))
-                '(:with company-yasnippet))))
-
-    :init (global-company-mode t)
+  (use-package ivy
+    :diminish
     :config
-    ;; no delay no autocomplete
-    (setq
-     company-idle-delay 0
-     company-minimum-prefix-length 2
-     company-tooltip-limit 20)
+    (ivy-mode t)
+    (setq ivy-use-virtual-buffers t)
+    (setq enable-recursive-minibuffers t)
+    (setq ivy-wrap t)
+    (global-set-key (kbd "C-c C-r") 'ivy-resume)
+    ;; Show #/total when scrolling buffers
+    (setq ivy-count-format "%d/%d "))
 
-    (setq company-backends 
-          (mapcar #'company-mode/backend-with-yas company-backends)))
+  (use-package swiper
+    :defer 1
+    :bind (("C-s" . swiper)
+           ("C-r" . swiper)))
+#+END_SRC
 
-  ;; Code-comprehension server
-  (use-package ycmd
-    :ensure t
-    :init (add-hook 'c++-mode-hook #'ycmd-mode)
-    :config
-    (set-variable 'ycmd-server-command '("python" "/usr/share/ycmd/ycmd"))
-    (set-variable 'ycmd-global-config (expand-file-name "~/.emacs.d/ycm_conf.py"))
-                                          ;    (set-variable 'ycmd-extra-conf-whitelist '("~/.emacs.d/ycm_conf.py"))
+#+RESULTS:
+: swiper
 
-    (use-package company-ycmd
-      :ensure t
-      :init (company-ycmd-setup)
-      :config (add-to-list 'company-backends (company-mode/backend-with-yas 'company-ycmd))))
+** [[https://github.com/magit/magit][Magit]]
+   The one true Git porcelain!
+   Truely a joy to use - it surfaces the power of Git in such a fluent manner.
+   Anyone using Git and Emacs *needs* Magit in their life!
+   #+begin_src emacs-lisp
+     (use-package
+      magit
+      :defer
+      :bind ("C-c m" . magit-status)
+      :init
+      (setq magit-completing-read-function 'ivy-completing-read))
+   #+end_src
 
-  ;; On-the-fly syntax checking
-  (use-package flycheck
-    :ensure t
-    :diminish flycheck-mode
-    :init (global-flycheck-mode t))
+** [[https://github.com/sigma/magit-gh-pulls][GitHub integration]]
+   This package integrates Magit with GitHub to allow the user to perform pull request actions.
+   I've added an argument so that when raising a new PR, it's automatically opened in my web-browser.
+   If my web-browser is already running, this'll simply open a new tab - if not, it'll spawn a new instance.
+   Another handy functionality here is that the URL of the PR is automatically copied to the kill ring, so you can
+   paste it wherever necessary.
+   #+begin_src emacs-lisp
+   (use-package magit-gh-pulls
+     :hook (magit-mode . turn-on-magit-gh-pulls)
+     :bind (:map magit-gh-pulls-mode-map
+     ("$" . magit-gh-pulls-popup)))
+   #+end_src
 
-  (use-package flycheck-ycmd
-    :ensure t
-    :commands (flycheck-ycmd-setup)
-    :init (add-hook 'ycmd-mode-hook 'flycheck-ycmd-setup))
+** [[https://github.com/flycheck/flycheck][Flycheck]]
+   Have Flycheck turned on for everything - checking stuff is always good!
+   #+begin_src emacs-lisp
+   (use-package flycheck
+     :hook
+     (after-init . global-flycheck-mode))
+   #+end_src
 
-  ;; Show argument list in echo area
+** [[https://github.com/Fuco1/smartparens][Smartparens]]
+   Brilliant automatic balancing of pairs. Makes for a really nice experience when typing in any language - programming or not.
+   Just check out some of the gifs in the project's README.
+   #+begin_src emacs-lisp
+     (use-package smartparens
+       :diminish smartparens-mode
+       :config
+       (progn
+	 (smartparens-global-mode)
+	 (show-smartparens-global-mode t)))
+   #+end_src
+
+** Yasnippet
+#+BEGIN_SRC emacs-lisp
+  (use-package
+   yasnippet
+   :defer 3
+   :diminish yas-minor-mode
+   :config (yas-global-mode t))
+#+END_SRC
+** Company
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package company
+       :defer 3
+       :diminish ""
+       :init
+
+       :bind (:map company-active-map
+		   ("M-j" . company-select-next)
+		   ("M-k" . company-select-previous))
+       :preface
+       ;; enable yasnippet everywhere
+       (defvar company-mode/enable-yas t
+	 "Enable yasnippet for all backends.")
+       (defun company-mode/backend-with-yas (backend)
+	 (if (or
+	      (not company-mode/enable-yas)
+	      (and (listp backend) (member 'company-yasnippet backend)))
+	     backend
+	   (append (if (consp backend) backend (list backend))
+		   '(:with company-yasnippet))))
+       :config
+       (global-company-mode)
+       (setq company-tooltip-limit 10)
+       (setq company-dabbrev-downcase 0)
+       (setq company-idle-delay 0)
+       (setq company-echo-delay 0)
+       (setq company-minimum-prefix-length 2)
+       (setq company-require-match nil)
+       (setq company-selection-wrap-around t)
+       (setq company-tooltip-align-annotations t)
+       ;; (setq company-tooltip-flip-when-above t)
+       (setq company-transformers '(company-sort-by-occurrence)) ; weight by frequency
+       (define-key company-active-map (kbd "M-n") nil)
+       (define-key company-active-map (kbd "M-p") nil)
+       (define-key company-active-map (kbd "C-n") 'company-select-next)
+       (define-key company-active-map (kbd "C-p") 'company-select-previous)
+       (define-key company-active-map (kbd "TAB") 'company-complete-common-or-cycle)
+       (define-key company-active-map (kbd "<tab>") 'company-complete-common-or-cycle)
+       (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
+       (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
+       (setq company-backends
+	     (mapcar #'company-mode/backend-with-yas company-backends))
+
+       (use-package company-anaconda
+	 :config
+	 (add-to-list 'company-backends 'company-anaconda))
+       (use-package company-statistics
+	 :ensure t
+	 :config
+	 (add-hook 'after-init-hook 'company-statistics-mode)))
+   #+END_SRC
+** Flycheck
+#+BEGIN_SRC emacs-lisp
+  (use-package
+   flycheck
+   :defer 2
+   :diminish flycheck-mode
+   :config
+   (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc
+					      php-phpmd
+					      php-phpcs
+					      scss)
+
+		 ;; so flycheck can check (require) calls properly.
+		 flycheck-emacs-lisp-load-path 'inherit)
+
+   (setq flycheck-check-syntax-automatically '(save mode-enabled)
+	 flycheck-standard-error-navigation nil
+	 flycheck-highlighting-mode 'lines)
+
+   (set-face-attribute 'flycheck-error nil
+		       :foreground "#ffffff"
+		       :background "#671232"
+		       :underline nil)
+
+   (set-face-attribute 'flycheck-warning nil
+		       :foreground "#ceb4e2"
+		       :background nil
+		       :underline nil)
+
+   (flycheck-define-checker proselint
+     "A linter for prose."
+     :command ("proselint" source-inplace)
+     :error-patterns
+     ((warning line-start (file-name) ":" line ":" column ": "
+	       (id (one-or-more (not (any " "))))
+	       (message (one-or-more not-newline)
+			(zero-or-more "\n" (any " ") (one-or-more not-newline)))
+	       line-end))
+     :modes (text-mode markdown-mode rst-mode))
+   (add-to-list 'flycheck-checkers 'proselint)
+
+   (global-flycheck-mode))
+#+END_SRC
+** [[https://github.com/magnars/multiple-cursors.el][multiple-cursors]]
+   Having multiple cursors can be very powerful.
+   This allows you to perform simultaneous actions at multiple positions within the buffer.
+   This can be based on arbitrary regions (n amount of lines, as chosen manually), for each ocurrance of a pattern/selection, etc.
+   #+begin_src emacs-lisp
+   (use-package multiple-cursors
+     :bind
+     ("C-S-c C-S-c" . mc/edit-lines)
+     ("C->" . mc/mark-next-like-this)
+     ("C-<" . mc/mark-previous-like-this)
+     ("C-c C->" . mc/mark-all-like-this))
+   #+end_src
+
+** [[https://github.com/purcell/exec-path-from-shell][Set exec/man PATH from shell]]
+   When looking for executables/man-pages, Emacs will inherit these properties from the OS environment.
+   This package provides the ability to do so from the user's shell, where they may have some more complex logic to determine such paths.
+   #+begin_src emacs-lisp
+   (use-package exec-path-from-shell
+     :config
+     (setq exec-path-from-shell-check-startup-files nil)
+     (exec-path-from-shell-initialize))
+   #+end_src
+
+** [[https://github.com/emacsfodder/move-text][MoveText]]
+   Easily move text up and down.
+   I've tied this into a little hydra for more natural repeated movement.
+   #+begin_src emacs-lisp
+   (use-package move-text
+     :bind ("C-c t" . hydra-move-text/body)
+     :config
+     ;; Move Text
+     (defhydra hydra-move-text ()
+       "Move text"
+       ("k" move-text-up "Up")
+       ("j" move-text-down "Down")
+       ("q" nil "Quit" :color blue)))
+   #+end_src
+
+** [[http://www.dr-qubit.org/undo-tree/undo-tree.el][undo-tree]]
+   Powerful undo actions formulated in a tree structure
+   #+begin_src emacs-lisp
+     (use-package undo-tree
+       :defer 2
+       :diminish undo-tree-mode
+       :config
+       (global-undo-tree-mode))
+   #+end_src
+
+** Eldoc
+#+BEGIN_SRC emacs-lisp
   (use-package eldoc
-    :diminish eldoc-mode
-    :init (add-hook 'ycmd-mode-hook 'ycmd-eldoc-setup))
+    :defer 3
+    :diminish)
 #+END_SRC
-  
+
+** multi-term
+#+BEGIN_SRC emacs-lisp
+  (use-package multi-term
+    :defer 2
+    :bind (("C-x m" . multi-term-next)
+           ("C-x M" . multi-term))
+    :config '(setq multi-term-program "/bin/zsh"))
+#+END_SRC
+
+** eglot
+#+BEGIN_SRC emacs-lisp
+  (use-package eglot
+    :hook  (python-mode . eglot-ensure)
+    :commands (eglot))
+#+END_SRC
+
+#+RESULTS:
+
+** dictcc
+Dict.cc in Emacs
+#+BEGIN_SRC emacs-lisp
+(use-package dictcc
+  :commands dictcc
+  :bind (("C-x RET ," . dictcc)
+	 ("C-x RET ." . dictcc-at-point))
+  :custom
+  (dictcc-source-lang "de")
+  (dictcc-destination-lang "en")
+  (dictcc-completion-backend 'ivy))
+#+END_SRC
