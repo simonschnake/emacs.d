@@ -32,11 +32,6 @@ External Packages to install are listed below:
 * Keybindings
 * Bootstrap Configuration
 
-** Enable lexical binding
-#+BEGIN_SRC emacs-lisp
-  ;;; -*- lexical-binding: t; -*-
-#+END_SRC
-
 ** Benchmark Emacs startup
 
 It's easier to optimize Emacs startup time when I have some data
@@ -87,16 +82,6 @@ the startup. Should not affect initialization with my configuration.
   (add-hook 'after-init-hook
             `(lambda () (setq file-name-handler-alist file-name-handler-alist-old)) t)
 #+END_SRC
-
-** Initial frame size
-
-Maximize the initial frame. There will be some flashing unless Emacs
-is started with =-mm= command line parameter.
-
-#+BEGIN_SRC emacs-lisp
-  (setq initial-frame-alist '((fullscreen . maximized)))
-#+END_SRC
-
 ** Harden TLS
 
 #+BEGIN_SRC emacs-lisp
