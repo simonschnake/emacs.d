@@ -12,27 +12,27 @@
       (file-attribute-modification-time (file-attributes filename))
     '(0 0 0 0)))
 
-(setq readme-org "~/.emacs.d/README.org"
-      readme-elc (concat (file-name-sans-extension readme-org) ".elc"))
+(setq emacs-org "~/.emacs.d/emacs.org"
+      emacs-elc (concat (file-name-sans-extension emacs-org) ".elc"))
 
-(defun readme-elc-is-old ()
-  (time-less-p (sim/file-modification-time readme-elc)
-               (sim/file-modification-time readme-org)))
+(defun emacs-elc-is-old ()
+  (time-less-p (sim/file-modification-time emacs-elc)
+               (sim/file-modification-time emacs-org)))
 
-(defun recompile-readme-org ()
+(defun recompile-emacs-org ()
   (interactive)
   (let ((old-init-file-debug init-file-debug)
         (init-file-debug nil))
     (require 'ob-tangle)
-    (org-babel-load-file readme-org t)
+    (org-babel-load-file emacs-org t)
     (setq init-file-debug old-init-file-debug)))
 
-;; If readme.org is newer than readme.elc, then load .org and show a
+;; If emacs.org is newer than emacs.elc, then load .org and show a
 ;; message that elc is out of date. Don't load elc anyway if in
 ;; init-file-debug mode
-(if (or init-file-debug (readme-elc-is-old))
+(if (or init-file-debug (emacs-elc-is-old))
     (progn
       (require 'ob-tangle)
-      (org-babel-load-file readme-org)
-      (message "readme.elc older than readme.org. Update with M-x recompile-readme-org"))
-  (load-file readme-elc))
+      (org-babel-load-file emacs-org)
+      (message "emacs.elc older than emacs.org. Update with M-x recompile-emacs-org"))
+  (load-file emacs-elc))
