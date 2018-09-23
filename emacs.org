@@ -379,15 +379,6 @@ turn on highlight matching brackets when cursor is on one
 #+END_SRC
 ** Appearance
    Configuration related to the appearance of Emacs
-*** Centered buffers
-    A really simple package that will centre your buffer contents in the frame.
-    Purely cosmetic, but I do find it helps with focus from time to time.
-    If I'm working on something that only needs one buffer, I'll usually centre it.
-    I have this bound to a key in my ~toggle-mode~ hydra so I can switch it on/off easily.
-    #+begin_src emacs-lisp
-    (use-package centered-window)
-    #+end_src
-
 *** Current line highlighting
     Highlights the current line of the point.
     Just helps to visualise where you are in the buffer.
@@ -418,47 +409,46 @@ turn on highlight matching brackets when cursor is on one
 /Fashion First!/
 Needs =xprop= to switch between dark and light gnome bar theme
 #+begin_src emacs-lisp
-      (use-package
-       doom-themes
-       :if window-system
-       :config
-       (defadvice load-theme (before theme-dont-propagate activate)
-         (mapc #'disable-theme custom-enabled-themes))
-       (defun doom-theming (theme-name)
-         (progn
-           (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-                 doom-themes-enable-italic t) ; if nil, italics is universally disabled
-           (load-theme theme-name t)
-           (doom-themes-visual-bell-config)
-           (doom-themes-neotree-config)
-           (doom-themes-treemacs-config)
-           (doom-themes-org-config)))
+  (use-package
+   doom-themes
+   :if window-system
+   :config
+   (defadvice load-theme (before theme-dont-propagate activate)
+     (mapc #'disable-theme custom-enabled-themes))
+   (defun doom-theming (theme-name)
+     (progn
+       (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+             doom-themes-enable-italic t) ; if nil, italics is universally disabled
+       (load-theme theme-name t)
+       (doom-themes-visual-bell-config)
+       (doom-themes-neotree-config)
+       (doom-themes-treemacs-config)
+       (doom-themes-org-config)))
 
-       ;; https://www.emacswiki.org/emacs/frame-fns.el
-       (defun get-frame-name (&optional frame)
-         "Return the string that names FRAME (a frame).  Default is selected frame."
-         (unless frame (setq frame  (selected-frame)))
-         (if (framep frame)
-             (cdr (assq 'name (frame-parameters frame)))
-           (error "Function `get-frame-name': Argument not a frame: `%s'" frame)))
+   ;; https://www.emacswiki.org/emacs/frame-fns.el
+   (defun get-frame-name (&optional frame)
+     "Return the string that names FRAME (a frame).  Default is selected frame."
+     (unless frame (setq frame  (selected-frame)))
+     (if (framep frame)
+         (cdr (assq 'name (frame-parameters frame)))
+       (error "Function `get-frame-name': Argument not a frame: `%s'" frame)))
 
-       ;; from https://nicolas.petton.fr/blog/emacs-dark-window-decoration.html
-       (defun shade-frame-gnome (shade)
-         (let ((frame-name (get-frame-name (selected-frame))))
-           (call-process-shell-command
-            (concat "xprop -f _GTK_THEME_VARIANT 8u -set _GTK_THEME_VARIANT \""
-                    shade "\" -name \""
-                    frame-name
-                    "\""))))
+   ;; from https://nicolas.petton.fr/blog/emacs-dark-window-decoration.html
+   (defun shade-frame-gnome (shade)
+     (let ((frame-name (get-frame-name (selected-frame))))
+       (call-process-shell-command
+        (concat "xprop -f _GTK_THEME_VARIANT 8u -set _GTK_THEME_VARIANT \""
+                shade "\" -name \""
+                frame-name
+                "\""))))
 
-       (defun light () (interactive) (progn
-                                       (shade-frame-gnome "light")
-                                       (doom-theming 'doom-one-light)))
-       (defun dark () (interactive) (progn
-                                      (shade-frame-gnome "dark")
-                                      (doom-theming 'doom-one)))
-
-       (light))
+   (defun light () (interactive) (progn
+                                   (doom-theming 'doom-one-light)
+                                   (shade-frame-gnome "light")))
+   (defun dark () (interactive) (progn
+                                  (doom-theming 'doom-one)
+                                  (shade-frame-gnome "dark")))
+   (light))
 #+end_src
 *** Modeline
 We use telephone-line because, it's fast to load.
@@ -496,9 +486,6 @@ Config coming later
 	    (lambda ()
 	      (setq tab-width 4)))
   (setq-default pdb-command-name "python -m pdb")
-
-  (use-package yapfify
-    :hook (python-mode yapf-mode))
 #+END_SRC
 ** Org-mode
 General org-mode configuration
@@ -508,8 +495,8 @@ General org-mode configuration
   (global-set-key (kbd "C-c a") 'org-agenda)
 
   (use-package org-bullets
-    :ensure t
-    :config
+    :commands (org-bullets-mode)
+    :init
     (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 
   (custom-set-variables
@@ -553,8 +540,6 @@ General org-mode configuration
     (if (equal "capture" (frame-parameter nil 'name))
         (delete-frame)))
 
-  (use-package noflet
-    :ensure t )
   (defun make-capture-frame ()
     "Create a new frame and run 'org-capture'."
     (interactive)
@@ -565,7 +550,7 @@ General org-mode configuration
       (org-capture)))
 
   (use-package org-download
-    :ensure t
+    :defer 5
     :after org
     :config
     (setq-default org-download-heading-lvl nil)
@@ -577,7 +562,7 @@ General org-mode configuration
 
     ;; to make notes to pdf using org-mode
   (use-package org-noter
-    :ensure t
+    :defer 5
     :config
     (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
                   org-noter-hide-other t
@@ -684,14 +669,6 @@ General org-mode configuration
      ("$" . magit-gh-pulls-popup)))
    #+end_src
 
-** [[https://github.com/flycheck/flycheck][Flycheck]]
-   Have Flycheck turned on for everything - checking stuff is always good!
-   #+begin_src emacs-lisp
-   (use-package flycheck
-     :hook
-     (after-init . global-flycheck-mode))
-   #+end_src
-
 ** [[https://github.com/Fuco1/smartparens][Smartparens]]
    Brilliant automatic balancing of pairs. Makes for a really nice experience when typing in any language - programming or not.
    Just check out some of the gifs in the project's README.
@@ -765,49 +742,7 @@ General org-mode configuration
 	 :config
 	 (add-hook 'after-init-hook 'company-statistics-mode)))
    #+END_SRC
-** Flycheck
-#+BEGIN_SRC emacs-lisp
-  (use-package
-   flycheck
-   :defer 2
-   :diminish flycheck-mode
-   :config
-   (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc
-					      php-phpmd
-					      php-phpcs
-					      scss)
 
-		 ;; so flycheck can check (require) calls properly.
-		 flycheck-emacs-lisp-load-path 'inherit)
-
-   (setq flycheck-check-syntax-automatically '(save mode-enabled)
-	 flycheck-standard-error-navigation nil
-	 flycheck-highlighting-mode 'lines)
-
-   (set-face-attribute 'flycheck-error nil
-		       :foreground "#ffffff"
-		       :background "#671232"
-		       :underline nil)
-
-   (set-face-attribute 'flycheck-warning nil
-		       :foreground "#ceb4e2"
-		       :background nil
-		       :underline nil)
-
-   (flycheck-define-checker proselint
-     "A linter for prose."
-     :command ("proselint" source-inplace)
-     :error-patterns
-     ((warning line-start (file-name) ":" line ":" column ": "
-	       (id (one-or-more (not (any " "))))
-	       (message (one-or-more not-newline)
-			(zero-or-more "\n" (any " ") (one-or-more not-newline)))
-	       line-end))
-     :modes (text-mode markdown-mode rst-mode))
-   (add-to-list 'flycheck-checkers 'proselint)
-
-   (global-flycheck-mode))
-#+END_SRC
 ** [[https://github.com/magnars/multiple-cursors.el][multiple-cursors]]
    Having multiple cursors can be very powerful.
    This allows you to perform simultaneous actions at multiple positions within the buffer.
@@ -866,7 +801,6 @@ General org-mode configuration
 ** multi-term
 #+BEGIN_SRC emacs-lisp
   (use-package multi-term
-    :defer 2
     :bind (("C-x m" . multi-term-next)
            ("C-x M" . multi-term))
     :config '(setq multi-term-program "/bin/zsh"))
@@ -885,7 +819,6 @@ General org-mode configuration
 Dict.cc in Emacs
 #+BEGIN_SRC emacs-lisp
 (use-package dictcc
-  :commands dictcc
   :bind (("C-x RET ," . dictcc)
 	 ("C-x RET ." . dictcc-at-point))
   :custom
