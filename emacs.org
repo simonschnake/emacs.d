@@ -3,36 +3,35 @@
 #+AUTHOR: Simon Schnake
 #+OPTIONS: toc:4 h:4
 
-* Things to add
-- cdlatex in org-mode
-- =C-h= as an alternative to Backspace
-- =M-h= as an alternative to =M-BACK=
-- proselint
-- multiple-cursors
-
 * Intro
 
-This my emacs-config. It is ~not~ stable at the moment
+This my emacs-config. It should be stable at the moment
 It is based on [[https://github.com/Kaali/vj-emacs-0x12][vj-emacs-0x12]].
 
-Key features will be:
+Key features are:
+- fast startup time
 - ivy
 - fast switching between dark and light theme with gtk also changing
-- very good python ide
-- advanced org-mode
-  - ob-ipython
-  - tools to write a tuftle styled latex in org-mode
-  - bibliography managment
-  - good support fort editing org src parts without =C-'=
-- ipython jupyter notebook handling
+- language-server-protocoll support (python)
+- ob-ipython
 
-** Requirements
+** TODO Requirements
 
 Here i will add all additional tools, you need for full usage
 
 ** Installation
 
 Keep it simple. Clone as =~/.emacs.d= and
+
+** TODO Things to add
+- cdlatex in org-mode
+- =C-h= as an alternative to Backspace
+- =M-h= as an alternative to =M-BACK=
+- proselint
+- multiple-cursors
+- bibliography managment
+- good support fort editing org src parts without =C-'=
+- ipython jupyter notebook handling to come
 * Bootstrap Configuration
 ** Benchmark Emacs startup
 
