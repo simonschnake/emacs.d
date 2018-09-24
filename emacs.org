@@ -281,11 +281,6 @@ Add [[https://github.com/emacsmirror/diminish][diminish]] and bind-key support t
     (fset 'yes-or-no-p 'y-or-n-p)
     #+end_src
 
-*** Delete trailing whitespace on save
-    Get rid of any trailing whitespace upon saving
-    #+begin_src emacs-lisp
-    (add-hook 'before-save-hook 'delete-trailing-whitespace)
-    #+end_src
 *** Follow symlinks in version control
     If there are any symlinks in version controlled repositories, follow them
     #+begin_src emacs-lisp
@@ -352,11 +347,7 @@ is highlighted.
 #+BEGIN_SRC emacs-lisp
   (show-paren-mode 1)
 #+END_SRC
-*** show-paren-mode
-turn on highlight matching brackets when cursor is on one
-#+BEGIN_SRC emacs-lisp
-(show-paren-mode t)
-#+END_SRC
+
 ** Keyboard Shortcuts
 
 #+BEGIN_SRC emacs-lisp
