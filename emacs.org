@@ -564,7 +564,6 @@ General org-mode configuration
 
     ;(use-package org-babel)
 
-<<<<<<< Updated upstream
   ;;; display/update images in the buffer after I evaluate
   (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
 
@@ -573,7 +572,7 @@ General org-mode configuration
    :ensure auctex
    :hook ((org-mode . turn-on-org-cdlatex)
           (LaTeX-mode . turn-on-cdlatex)))
-=======
+
   (use-package
    ob-ipython
    :defer 1
@@ -583,7 +582,6 @@ General org-mode configuration
    ;; display/update images in the buffer after I evaluate
    (add-hook 'org-babel-after-execute-hook
    'org-display-inline-images 'append))
->>>>>>> Stashed changes
 #+END_SRC
 
 *** GTD in org-mode
@@ -642,7 +640,8 @@ General org-mode configuration
 #+RESULTS:
 : swiper
 
-** [[https://github.com/magit/magit][Magit]]
+** [[https://github.com/magit/magit][Magit
+]]
    The one true Git porcelain!
    Truely a joy to use - it surfaces the power of Git in such a fluent manner.
    Anyone using Git and Emacs *needs* Magit in their life!
