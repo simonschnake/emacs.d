@@ -5,7 +5,7 @@
 
 * Intro
 
-This my emacs-config. It should be stable at the moment
+This my emacs-config. It should be stable at the moment.
 It is based on [[https://github.com/Kaali/vj-emacs-0x12][vj-emacs-0x12]].
 
 Key features are:
@@ -822,4 +822,12 @@ Dict.cc in Emacs
   (dictcc-source-lang "de")
   (dictcc-destination-lang "en")
   (dictcc-completion-backend 'ivy))
+#+END_SRC
+
+* Local Configuration
+
+#+BEGIN_SRC emacs-lisp
+  (let ((localel "~/.emacs.d/local.el"))
+    (if (file-exists-p localel)
+        (load (file-name-sans-extension localel))))
 #+END_SRC
