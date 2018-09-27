@@ -473,9 +473,13 @@ Config coming later
   (setq-default python-indent 4)
   (setq-default python-indent-offset 4)
   (add-hook 'python-mode-hook
-	    (lambda ()
-	      (setq tab-width 4)))
+            (lambda ()
+              (setq tab-width 4)))
   (setq-default pdb-command-name "python -m pdb")
+
+  (use-package
+    conda
+    :commands conda-env-activate)
 #+END_SRC
 ** Org-mode
 General org-mode configuration
@@ -575,6 +579,12 @@ General org-mode configuration
 
   ;;; display/update images in the buffer after I evaluate
   (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
+
+  (use-package
+   cdlatex
+   :ensure auctex
+   :hook ((org-mode . turn-on-org-cdlatex)
+          (LaTeX-mode . turn-on-cdlatex)))
 #+END_SRC
 
 *** GTD in org-mode
@@ -707,7 +717,7 @@ General org-mode configuration
        (setq company-dabbrev-downcase 0)
        (setq company-idle-delay 0)
        (setq company-echo-delay 0)
-       (setq company-minimum-prefix-length 2)
+       (setq company-minimum-prefix-length 3)
        (setq company-require-match nil)
        (setq company-selection-wrap-around t)
        (setq company-tooltip-align-annotations t)
@@ -724,9 +734,6 @@ General org-mode configuration
        (setq company-backends
 	     (mapcar #'company-mode/backend-with-yas company-backends))
 
-       (use-package company-anaconda
-	 :config
-	 (add-to-list 'company-backends 'company-anaconda))
        (use-package company-statistics
 	 :ensure t
 	 :config
