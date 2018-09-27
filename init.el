@@ -1,4 +1,3 @@
-;;; -*- lexical-binding: t; -*-
 ;; stolen and modified from https://github.com/Kaali/vj-emacs-0x12
 ;; Disable package initialize at startup. The commented line below is
 ;; required for really disabling it.
