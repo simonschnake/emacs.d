@@ -582,6 +582,16 @@ General org-mode configuration
    ;; display/update images in the buffer after I evaluate
    (add-hook 'org-babel-after-execute-hook
    'org-display-inline-images 'append))
+
+  ; stolen from https://github.com/jkitchin/scimax/blob/master/scimax-ob.el
+  (defun sim/ob-clear-all-results ()
+    "Clear all results in the buffer."
+    (interactive)
+    (save-excursion
+      (goto-char (point-min))
+      (while (org-babel-next-src-block)
+        (org-babel-remove-result))))
+
 #+END_SRC
 
 *** GTD in org-mode
