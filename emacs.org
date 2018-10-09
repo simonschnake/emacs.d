@@ -485,66 +485,13 @@ Config coming later
 General org-mode configuration
 
 #+BEGIN_SRC emacs-lisp
-    (global-set-key (kbd "C-c c") 'org-capture)
-    (global-set-key (kbd "C-c a") 'org-agenda)
-
     (use-package org-bullets
       :commands (org-bullets-mode)
       :init
       (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 
-    (custom-set-variables
-     '(org-directory "~/org")
-     '(org-mobile-directory "~/org")
-     '(org-default-notes-file (concat org-directory "/notes.org"))
-     '(org-export-html-postamble nil)
-     '(org-hide-leading-stars t)
-     '(org-startup-folded (quote overview))
-     '(org-startup-indented t)
-     )
-
-
-    (setq org-agenda-custom-commands
-          '(("c" "Simple agenda view"
-             ((agenda "")
-              (alltodo "")))))
-
-    (setq org-agenda-custom-commands
-          '(("d" "Daily agenda and all TODOs"
-             ((tags "PRIORITY=\"A\""
-                    ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                     (org-agenda-overriding-header "High-priority unfinished tasks:")))
-              (agenda "" ((org-agenda-ndays 1)))
-              (alltodo ""
-                       ((org-agenda-skip-function '(or (air-org-skip-subtree-if-habit)
-                                                       (air-org-skip-subtree-if-priority ?A)
-                                                       (org-agenda-skip-if nil '(scheduled deadline))))
-                        (org-agenda-overriding-header "ALL normal priority tasks:"))))
-             ((org-agenda-compact-blocks t)))))
-
-    (defadvice org-capture-finalize
-        (after delete-capture-frame activate)
-      "Advise capture-finalize to close the frame."
-      (if (equal "capture" (frame-parameter nil 'name))
-          (delete-frame)))
-
-    (defadvice org-capture-destroy
-        (after delete-capture-frame activate)
-      "Advise capture-destroy to close the frame."
-      (if (equal "capture" (frame-parameter nil 'name))
-          (delete-frame)))
-
-    (defun make-capture-frame ()
-      "Create a new frame and run 'org-capture'."
-      (interactive)
-      (make-frame '((name . "capture")))
-      (select-frame-by-name "capture")
-      (delete-other-windows)
-      (noflet ((switch-to-buffer-other-window (buf) (switch-to-buffer buf)))
-        (org-capture)))
-
-    (use-package org-download
-      :defer 5
+    (use-package org-download 
+      :disabled t
       :after org
       :config
       (setq-default org-download-heading-lvl nil)
@@ -556,22 +503,18 @@ General org-mode configuration
 
       ;; to make notes to pdf using org-mode
     (use-package org-noter
-      :defer 5
+      :disabled t
       :config
       (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
-                    org-noter-hide-other t
-                    org-noter))
-
-    ;(use-package org-babel)
-
-  ;;; display/update images in the buffer after I evaluate
-  (add-hook 'org-babel-after-execute-hook 'org-display-inline-images 'append)
+		    org-noter-hide-other t
+		    org-noter))
 
   (use-package
    cdlatex
+   :disabled t
    :ensure auctex
    :hook ((org-mode . turn-on-org-cdlatex)
-          (LaTeX-mode . turn-on-cdlatex)))
+	  (LaTeX-mode . turn-on-cdlatex)))
 
   (use-package
    ob-ipython
@@ -581,7 +524,7 @@ General org-mode configuration
    (setq org-confirm-babel-evaluate nil)
    ;; display/update images in the buffer after I evaluate
    (add-hook 'org-babel-after-execute-hook
-   'org-display-inline-images 'append))
+	     'org-display-inline-images 'append))
 
   ; stolen from https://github.com/jkitchin/scimax/blob/master/scimax-ob.el
   (defun sim/ob-clear-all-results ()
@@ -590,35 +533,16 @@ General org-mode configuration
     (save-excursion
       (goto-char (point-min))
       (while (org-babel-next-src-block)
-        (org-babel-remove-result))))
+	(org-babel-remove-result))))
 
-#+END_SRC
-
-*** GTD in org-mode
-
-| C-c C-W     | org-refile |
-| C-c C-x C-a | org-archive-subtree-default |
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-agenda-files '("~/gtd/inbox.org"
-                           "~/gtd/gtd.org"
-                           "~/gtd/tickler.org"))
-
-
-  (setq org-capture-templates '(("t" "Todo [inbox]" entry
-                                 (file+headline "~/gtd/inbox.org" "Tasks")
-                                 "* TODO %i%?")
-                                ("T" "Tickler" entry
-                                 (file+headline "~/gtd/tickler.org" "Tickler")
-                                 "* %i%? \n %U")
-                                  ("n" "Note" entry (file "~/org/notes.org")
-                                   "* %?\n%u")))
-  ;; C-c C-w = org-refile
-  (setq org-refile-targets '(("~/gtd/gtd.org" :maxlevel . 3)
-                             ("~/gtd/someday.org" :level . 1)
-                             ("~/gtd/tickler.org" :maxlevel . 2)))
-
-  (setq org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+  (defun sim/execute-to-point ()
+    "Execute all the src blocks that start before point."
+    (interactive)
+    (let ((p (point)))
+      (save-excursion
+	(goto-char (point-min))
+	(while (and (org-babel-next-src-block) (< (point) p))
+	  (org-babel-execute-src-block)))))
 #+END_SRC
 
 * Minor Modes
@@ -647,8 +571,15 @@ General org-mode configuration
            ("C-r" . swiper)))
 #+END_SRC
 
-#+RESULTS:
-: swiper
+** Avy
+
+#+BEGIN_SRC emacs-lisp
+  (use-package avy
+    :diminish
+    :defer 1
+    :bind
+    (("C-;" . avy-goto-char)))
+#+END_SRC
 
 ** [[https://github.com/magit/magit][Magit
 ]]
@@ -785,17 +716,6 @@ General org-mode configuration
        ("j" move-text-down "Down")
        ("q" nil "Quit" :color blue)))
    #+end_src
-
-** [[http://www.dr-qubit.org/undo-tree/undo-tree.el][undo-tree]]
-   Powerful undo actions formulated in a tree structure
-   #+begin_src emacs-lisp
-     (use-package undo-tree
-       :defer 2
-       :diminish undo-tree-mode
-       :config
-       (global-undo-tree-mode))
-   #+end_src
-
 ** Eldoc
 #+BEGIN_SRC emacs-lisp
   (use-package eldoc
@@ -818,8 +738,6 @@ General org-mode configuration
     :commands (eglot))
 #+END_SRC
 
-#+RESULTS:
-
 ** dictcc
 Dict.cc in Emacs
 #+BEGIN_SRC emacs-lisp
@@ -830,6 +748,12 @@ Dict.cc in Emacs
   (dictcc-source-lang "de")
   (dictcc-destination-lang "en")
   (dictcc-completion-backend 'ivy))
+#+END_SRC
+
+** which-key
+#+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :defer 3)
 #+END_SRC
 
 * Local Configuration
