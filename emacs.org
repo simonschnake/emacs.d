@@ -482,68 +482,90 @@ Config coming later
     :commands conda-env-activate)
 #+END_SRC
 ** Org-mode
-General org-mode configuration
+*** General org-mode configuration
 
-#+BEGIN_SRC emacs-lisp
-    (use-package org-bullets
-      :commands (org-bullets-mode)
-      :init
-      (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+ #+BEGIN_SRC emacs-lisp
+     (use-package org-bullets
+       :commands (org-bullets-mode)
+       :init
+       (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 
-    (use-package org-download 
-      :disabled t
-      :after org
-      :config
-      (setq-default org-download-heading-lvl nil)
-       ;;; to get rid of the #+DOWNLOADED part
-      (setq-default org-download-image-dir "~/org/img/")
-      (setq org-download-annotate-function (lambda (_) ""))
-      (setq org-download-method 'attach)
-      )
+     (use-package org-download 
+       :after org
+       :config
+       (setq-default org-download-heading-lvl nil)
+	;;; to get rid of the #+DOWNLOADED part
+       (setq-default org-download-image-dir "~/org/img/")
+       (setq org-download-annotate-function (lambda (_) ""))
+       (setq org-download-method 'attach)
+       )
 
-      ;; to make notes to pdf using org-mode
-    (use-package org-noter
-      :disabled t
-      :config
-      (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
-		    org-noter-hide-other t
-		    org-noter))
+       ;; to make notes to pdf using org-mode
+     (use-package org-noter
+       :config
+       (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
+		     org-noter-hide-other t
+		     org-noter))
 
-  (use-package
-   cdlatex
-   :disabled t
-   :ensure auctex
-   :hook ((org-mode . turn-on-org-cdlatex)
-	  (LaTeX-mode . turn-on-cdlatex)))
+   (use-package cdlatex
+    :ensure auctex
+    :hook ((org-mode . turn-on-org-cdlatex)
+	   (LaTeX-mode . turn-on-cdlatex)))
 
-  (use-package
-   ob-ipython
-   :defer 1
-   :config
-   ;; don't prompt me to confirm everytime I want to evaluate a block
-   (setq org-confirm-babel-evaluate nil)
-   ;; display/update images in the buffer after I evaluate
-   (add-hook 'org-babel-after-execute-hook
-	     'org-display-inline-images 'append))
+   (use-package
+    ob-ipython
+    :defer 1
+    :config
+    ;; don't prompt me to confirm everytime I want to evaluate a block
+    (setq org-confirm-babel-evaluate nil)
+    ;; display/update images in the buffer after I evaluate
+    (add-hook 'org-babel-after-execute-hook
+	      'org-display-inline-images 'append))
 
-  ; stolen from https://github.com/jkitchin/scimax/blob/master/scimax-ob.el
-  (defun sim/ob-clear-all-results ()
-    "Clear all results in the buffer."
-    (interactive)
-    (save-excursion
-      (goto-char (point-min))
-      (while (org-babel-next-src-block)
-	(org-babel-remove-result))))
+   ; stolen from https://github.com/jkitchin/scimax/blob/master/scimax-ob.el
+   (defun sim/ob-clear-all-results ()
+     "Clear all results in the buffer."
+     (interactive)
+     (save-excursion
+       (goto-char (point-min))
+       (while (org-babel-next-src-block)
+	 (org-babel-remove-result))))
 
-  (defun sim/execute-to-point ()
-    "Execute all the src blocks that start before point."
-    (interactive)
-    (let ((p (point)))
-      (save-excursion
-	(goto-char (point-min))
-	(while (and (org-babel-next-src-block) (< (point) p))
-	  (org-babel-execute-src-block)))))
-#+END_SRC
+   (defun sim/execute-to-point ()
+     "Execute all the src blocks that start before point."
+     (interactive)
+     (let ((p (point)))
+       (save-excursion
+	 (goto-char (point-min))
+	 (while (and (org-babel-next-src-block) (< (point) p))
+	   (org-babel-execute-src-block)))))
+ #+END_SRC
+*** GTD in org-mode
+
+ #+BEGIN_SRC emacs-lisp
+   (define-key global-map "\C-cc" 'org-capture)
+
+   (setq org-agenda-files '("~/org/inbox.org"
+			    "~/org/projects.org"
+			    "~/org/tickler.org"))
+
+   (setq org-capture-templates '(("t" "Todo [inbox]" entry
+				  (file+headline "~/org/inbox.org" "Tasks")
+				  "* TODO %i%?")
+				 ("T" "Tickler" entry
+				  (file+headline "~/org/tickler.org" "Tickler")
+				  "* %i%? \n %U")
+				 ("n" "Note [inbox]" entry
+				  (file+headline "~/org/inbox.org" "Notes")
+				  "* %i%?")))
+
+   (setq org-refile-targets '(("~/org/projects.org" :maxlevel . 3)
+			      ("~/org/someday.org" :level . 1)
+			      ("~/org/tickler.org" :maxlevel . 2)))
+
+   (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+
+ #+END_SRC
 
 * Minor Modes
 ** Flymake
@@ -763,3 +785,9 @@ Dict.cc in Emacs
     (if (file-exists-p localel)
         (load (file-name-sans-extension localel))))
 #+END_SRC
+
+
+
+
+
+
