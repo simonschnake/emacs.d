@@ -485,44 +485,48 @@ Config coming later
 *** General org-mode configuration
 
  #+BEGIN_SRC emacs-lisp
-     (use-package org-bullets
-       :commands (org-bullets-mode)
-       :init
-       (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+   (use-package org
+     :config
+     (global-set-key (kbd "C-h") 'delete-backward-char))
 
-     (use-package org-download 
-       :after org
-       :config
-       (setq-default org-download-heading-lvl nil)
-	;;; to get rid of the #+DOWNLOADED part
-       (setq-default org-download-image-dir "~/org/img/")
-       (setq org-download-annotate-function (lambda (_) ""))
-       (setq org-download-method 'attach)
-       )
+   (use-package org-bullets
+     :commands (org-bullets-mode)
+     :init
+     (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 
-       ;; to make notes to pdf using org-mode
-     (use-package org-noter
-       :config
-       (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
-		     org-noter-hide-other t
-		     org-noter))
+   (use-package org-download 
+     :after org
+     :config
+     (setq-default org-download-heading-lvl nil)
+	   ;;; to get rid of the #+DOWNLOADED part
+     (setq-default org-download-image-dir "~/org/img/")
+     (setq org-download-annotate-function (lambda (_) ""))
+     (setq org-download-method 'attach))
+
+   ;; to make notes to pdf using org-mode
+   (use-package org-noter
+     :config
+     (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
+		   org-noter-hide-other t
+		   org-noter))
 
    (use-package cdlatex
-    :ensure auctex
-    :hook ((org-mode . turn-on-org-cdlatex)
-	   (LaTeX-mode . turn-on-cdlatex)))
+     :disabled
+     :ensure auctex
+     :hook ((org-mode . turn-on-org-cdlatex)
+	    (LaTeX-mode . turn-on-cdlatex)))
 
    (use-package
-    ob-ipython
-    :defer 1
-    :config
-    ;; don't prompt me to confirm everytime I want to evaluate a block
-    (setq org-confirm-babel-evaluate nil)
-    ;; display/update images in the buffer after I evaluate
-    (add-hook 'org-babel-after-execute-hook
-	      'org-display-inline-images 'append))
+     ob-ipython
+     :defer 1
+     :config
+     ;; don't prompt me to confirm everytime I want to evaluate a block
+     (setq org-confirm-babel-evaluate nil)
+     ;; display/update images in the buffer after I evaluate
+     (add-hook 'org-babel-after-execute-hook
+	       'org-display-inline-images 'append))
 
-   ; stolen from https://github.com/jkitchin/scimax/blob/master/scimax-ob.el
+   ;; stolen from https://github.com/jkitchin/scimax/blob/master/scimax-ob.el
    (defun sim/ob-clear-all-results ()
      "Clear all results in the buffer."
      (interactive)
@@ -561,12 +565,47 @@ Config coming later
 
    (setq org-refile-targets '(("~/org/projects.org" :maxlevel . 3)
 			      ("~/org/someday.org" :level . 1)
+			      ("~/org/today.org" :maxlevel . 2)
 			      ("~/org/tickler.org" :maxlevel . 2)))
 
    (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 
  #+END_SRC
+*** Thesis Configuration
+#+BEGIN_SRC emacs-lisp
+  (require 'ox-latex)
+  (add-to-list 'org-latex-classes
+	       '("thesis"
+		 "\\documentclass[12pt, a4paper]{thesis}"
+		 ("\\chapter{%s}" . "\\chapter*{%s}")
+		 ("\\section{%s}" . "\\section*{%s}")
+		 ("\\subsection{%s}" . "\\subsection*{%s}")
+		 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
 
+  (use-package ivy-bibtex
+    :ensure t
+    :config
+    (setq ivy-bibtex-bibliography "~/thesis/bibliography.bib" ;; where your references are stored
+	  ivy-bibtex-library-path "~/thesis/bib/" ;; where your pdfs etc are stored
+	  ivy-bibtex-notes-path "~/thesis/bib/notes.org" ;; where your notes are stored
+	  bibtex-completion-bibliography "~/thesis/bibliography.bib" ;; writing completion
+	  bibtex-completion-notes-path  "~/thesis/bibliography.bib"))
+
+  (use-package org-ref
+    :after org
+    :ensure t
+    :init
+    (setq org-ref-completion-library 'org-ref-ivy-cite
+	  org-ref-notes-directory "~/thesis/bib/"
+	  org-ref-bibliography-notes "~/thesis/bib/notes.org"
+	  org-ref-default-bibliography '("~/thesis/bibliography.bib")
+	  org-ref-pdf-directory "~/thesis/bib/")
+    :config
+    (add-hook 'org-export-before-parsing-hook 'orcp-citeproc))
+
+#+END_SRC
 * Minor Modes
 ** Flymake
 #+BEGIN_SRC emacs-lisp
