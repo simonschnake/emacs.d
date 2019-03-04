@@ -463,7 +463,6 @@ Config coming later
 ** PDF-tools
 #+BEGIN_SRC emacs-lisp
   (use-package pdf-tools
-    :disabled
     :defer t
     :mode ("\\.pdf\\'" . pdf-view-mode)
     :config (pdf-tools-install))
@@ -597,7 +596,6 @@ Config coming later
   (use-package org-ref
     :after org
     :ensure t
-    :bind (("C-c C-x C-e" . crossref-add-bibtex-entry))
     :init
     (setq org-ref-completion-library 'org-ref-ivy-cite
 	  org-ref-notes-directory "~/thesis/bib/"
@@ -607,7 +605,7 @@ Config coming later
     :config
     (add-hook 'org-export-before-parsing-hook 'orcp-citeproc))
 
-  #+END_SRC`
+#+END_SRC
 * Minor Modes
 ** Flymake
 #+BEGIN_SRC emacs-lisp
