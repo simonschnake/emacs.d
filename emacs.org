@@ -511,7 +511,6 @@ Config coming later
 		   org-noter))
 
    (use-package cdlatex
-     :disabled
      :ensure auctex
      :hook ((org-mode . turn-on-org-cdlatex)
 	    (LaTeX-mode . turn-on-cdlatex)))
@@ -651,9 +650,9 @@ Config coming later
      (use-package
       magit
       :defer
-      :bind ("C-c m" . magit-status)
-      :init
-      (setq magit-completing-read-function 'ivy-completing-read))
+      :bind ("C-c m" . magit-status))
+      ;;:init
+      ;;(setq magit-completing-read-function 'ivy-completing-read))
    #+end_src
 
 ** [[https://github.com/sigma/magit-gh-pulls][GitHub integration]]
@@ -663,10 +662,11 @@ Config coming later
    Another handy functionality here is that the URL of the PR is automatically copied to the kill ring, so you can
    paste it wherever necessary.
    #+begin_src emacs-lisp
-   (use-package magit-gh-pulls
-     :hook (magit-mode . turn-on-magit-gh-pulls)
-     :bind (:map magit-gh-pulls-mode-map
-     ("$" . magit-gh-pulls-popup)))
+     (use-package magit-gh-pulls
+       :disabled t
+       :hook (magit-mode . turn-on-magit-gh-pulls)
+       :bind (:map magit-gh-pulls-mode-map
+       ("$" . magit-gh-pulls-popup)))
    #+end_src
 
 ** [[https://github.com/Fuco1/smartparens][Smartparens]]
