@@ -11,28 +11,22 @@ It is based on [[https://github.com/Kaali/vj-emacs-0x12][vj-emacs-0x12]].
 Key features are:
 - fast startup time
 - ivy
-- fast switching between dark and light theme with gtk also changing
+- fast switching between dark and light theme
 - language-server-protocoll support (python)
-- ob-ipython
-
-** TODO Requirements
-
-Here i will add all additional tools, you need for full usage
+- jupyter support in org-mode
 
 ** Installation
 
 Keep it simple. Clone as =~/.emacs.d= and
 
 ** TODO Things to add
-- cdlatex in org-mode
-- =C-h= as an alternative to Backspace
-- =M-h= as an alternative to =M-BACK=
-- proselint
-- multiple-cursors
-- bibliography managment
-- good support fort editing org src parts without =C-'=
-- ipython jupyter notebook handling to come
 * Bootstrap Configuration
+** Start Emacs Server
+#+BEGIN_SRC emacs-lisp
+  (require 'server)
+  (unless (server-running-p)
+    (server-start))
+#+END_SRC
 ** Benchmark Emacs startup
 
 It's easier to optimize Emacs startup time when I have some data
@@ -400,45 +394,27 @@ is highlighted.
 Needs =xprop= to switch between dark and light gnome bar theme
 #+begin_src emacs-lisp
   (use-package
-   doom-themes
-   :if window-system
-   :config
-   (defadvice load-theme (before theme-dont-propagate activate)
-     (mapc #'disable-theme custom-enabled-themes))
-   (defun doom-theming (theme-name)
-     (progn
-       (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-             doom-themes-enable-italic t) ; if nil, italics is universally disabled
-       (load-theme theme-name t)
-       (doom-themes-visual-bell-config)
-       (doom-themes-neotree-config)
-       (doom-themes-treemacs-config)
-       (doom-themes-org-config)))
+    doom-themes
+    :config
+    ;; cleaning up
+    (defadvice load-theme (before theme-dont-propagate activate)
+      (mapc #'disable-theme custom-enabled-themes))
 
-   ;; https://www.emacswiki.org/emacs/frame-fns.el
-   (defun get-frame-name (&optional frame)
-     "Return the string that names FRAME (a frame).  Default is selected frame."
-     (unless frame (setq frame  (selected-frame)))
-     (if (framep frame)
-         (cdr (assq 'name (frame-parameters frame)))
-       (error "Function `get-frame-name': Argument not a frame: `%s'" frame)))
+    (defun doom-theming (theme-name)
+      "a wrapper for the whole doom theming process"
+      (progn
+	(setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+	      doom-themes-enable-italic t) ; if nil, italics is universally disabled
+	(load-theme theme-name t)
+	(doom-themes-visual-bell-config)
+	(doom-themes-neotree-config)
+	(doom-themes-treemacs-config)
+	(doom-themes-org-config)))
 
-   ;; from https://nicolas.petton.fr/blog/emacs-dark-window-decoration.html
-   (defun shade-frame-gnome (shade)
-     (let ((frame-name (get-frame-name (selected-frame))))
-       (call-process-shell-command
-        (concat "xprop -f _GTK_THEME_VARIANT 8u -set _GTK_THEME_VARIANT \""
-                shade "\" -name \""
-                frame-name
-                "\""))))
+    (defun light () (interactive) (doom-theming 'doom-one-light))
+    (defun dark () (interactive) (doom-theming 'doom-one))
 
-   (defun light () (interactive) (progn
-                                   (doom-theming 'doom-one-light)
-                                   (shade-frame-gnome "light")))
-   (defun dark () (interactive) (progn
-                                  (doom-theming 'doom-one)
-                                  (shade-frame-gnome "dark")))
-   (light))
+    (light))
 #+end_src
 *** Modeline
 We use telephone-line because, it's fast to load.
@@ -460,116 +436,79 @@ Config coming later
 		(telephone-line-mode 1)))
 #+END_SRC
 * Major modes
-** PDF-tools
+** PDF-Tools
 #+BEGIN_SRC emacs-lisp
   (use-package pdf-tools
+    :disabled
     :defer t
     :mode ("\\.pdf\\'" . pdf-view-mode)
     :config (pdf-tools-install))
 #+END_SRC
 
 ** Python
-#+BEGIN_SRC emacs-lisp
-  (setq-default python-indent 4)
-  (setq-default python-indent-offset 4)
-  (add-hook 'python-mode-hook
-            (lambda ()
-              (setq tab-width 4)))
-  (setq-default pdb-command-name "python -m pdb")
 
-  (use-package
-    conda
-    :commands conda-env-activate)
+- [X] switched to emacs-juptyer package from ob-ipython
+- [ ] lsp-mode microsoft python
+- [ ] switch from conda to pipenv (later...)
+*** conda environment
+  #+BEGIN_SRC emacs-lisp
+    (use-package
+      conda
+      :commands conda-env-activate
+      :init
+      (setenv "ANACONDA_HOME" "~/.conda/"))
+  #+END_SRC
+*** jupyter
+
+This package offers jupyter kernel support for emacs org-mode. I take it as a
+replacement for ob-ipython. More information at [[https://github.com/dzop/emacs-jupyter]]
+
+The repl is used with =M-x jupyter-run-repl= and =M-x jupyter-connect-repl=. 
+
+Example code block
+
+#+BEGIN_SRC jupyter-python :async "yes" :session "py"
+import numpy as np
+np.ones((4,4)) + np.diag(np.ones(4))
 #+END_SRC
-** Org-mode
+
+#+BEGIN_SRC emacs-lisp
+  (use-package jupyter)   
+#+END_SRC
+** Org
 *** General org-mode configuration
 
  #+BEGIN_SRC emacs-lisp
    (use-package org
      :config
-     (global-set-key (kbd "C-h") 'delete-backward-char))
+     (org-babel-do-load-languages
+      'org-babel-load-languages
+      '((emacs-lisp . t)
+	(latex . t)
+	;;(julia . t) 
+	(python . t)
+	(jupyter . t) ;; jupyter should be loaded las 
+	))
+     (unbind-key "M-h" org-mode-map))
 
    (use-package org-bullets
      :commands (org-bullets-mode)
-     :init
-     (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+     :hook     (org-mode . (lambda () (org-bullets-mode 1))))
 
-   (use-package org-download 
-     :after org
-     :config
-     (setq-default org-download-heading-lvl nil)
-	   ;;; to get rid of the #+DOWNLOADED part
-     (setq-default org-download-image-dir "~/org/img/")
-     (setq org-download-annotate-function (lambda (_) ""))
-     (setq org-download-method 'attach))
+   ; (use-package org-download)
 
    ;; to make notes to pdf using org-mode
-   (use-package org-noter
-     :config
-     (setq-default org-noter-default-notes-file-names '("~/org/notes.org")
-		   org-noter-hide-other t
-		   org-noter))
+   ; (use-package org-noter)
 
+
+   ;; TODO: this should be moved to a more suitable place
    (use-package cdlatex
+     :disabled
      :ensure auctex
      :hook ((org-mode . turn-on-org-cdlatex)
 	    (LaTeX-mode . turn-on-cdlatex)))
-
-   (use-package
-     ob-ipython
-     :defer 1
-     :config
-     ;; don't prompt me to confirm everytime I want to evaluate a block
-     (setq org-confirm-babel-evaluate nil)
-     ;; display/update images in the buffer after I evaluate
-     (add-hook 'org-babel-after-execute-hook
-	       'org-display-inline-images 'append))
-
-   ;; stolen from https://github.com/jkitchin/scimax/blob/master/scimax-ob.el
-   (defun sim/ob-clear-all-results ()
-     "Clear all results in the buffer."
-     (interactive)
-     (save-excursion
-       (goto-char (point-min))
-       (while (org-babel-next-src-block)
-	 (org-babel-remove-result))))
-
-   (defun sim/execute-to-point ()
-     "Execute all the src blocks that start before point."
-     (interactive)
-     (let ((p (point)))
-       (save-excursion
-	 (goto-char (point-min))
-	 (while (and (org-babel-next-src-block) (< (point) p))
-	   (org-babel-execute-src-block)))))
  #+END_SRC
-*** GTD in org-mode
 
- #+BEGIN_SRC emacs-lisp
-   (define-key global-map "\C-cc" 'org-capture)
-
-   (setq org-agenda-files '("~/org/inbox.org"
-			    "~/org/projects.org"
-			    "~/org/tickler.org"))
-
-   (setq org-capture-templates '(("t" "Todo [inbox]" entry
-				  (file+headline "~/org/inbox.org" "Tasks")
-				  "* TODO %i%?")
-				 ("T" "Tickler" entry
-				  (file+headline "~/org/tickler.org" "Tickler")
-				  "* %i%? \n %U")
-				 ("n" "Note [inbox]" entry
-				  (file+headline "~/org/inbox.org" "Notes")
-				  "* %i%?")))
-
-   (setq org-refile-targets '(("~/org/projects.org" :maxlevel . 3)
-			      ("~/org/someday.org" :level . 1)
-			      ("~/org/today.org" :maxlevel . 2)
-			      ("~/org/tickler.org" :maxlevel . 2)))
-
-   (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
-
- #+END_SRC
 *** Thesis Configuration
 #+BEGIN_SRC emacs-lisp
   (require 'ox-latex)
@@ -605,12 +544,27 @@ Config coming later
     (add-hook 'org-export-before-parsing-hook 'orcp-citeproc))
 
 #+END_SRC
-* Minor Modes
-** Flymake
-#+BEGIN_SRC emacs-lisp
-  (use-package flymake
-    :diminish)
+** SLIME
+#+BEGIN_SRC emacs-lisp 
+(use-package slime
+  :ensure t
+  :config
+  (progn
+    (setq inferior-lisp-program "/usr/bin/sbcl")
+    (slime-setup)))
 #+END_SRC
+* Minor Modes
+*** lsp-mode
+ #+BEGIN_SRC emacs-lisp
+ (use-package lsp-mode :commands lsp)
+ (use-package lsp-ui :commands lsp-ui-mode)
+ (use-package company-lsp :commands company-lsp)
+ #+END_SRC
+** Flymake
+ #+BEGIN_SRC emacs-lisp
+   (use-package flymake
+     :diminish)
+ #+END_SRC 
 ** Ivy
 
 #+BEGIN_SRC emacs-lisp
@@ -634,11 +588,12 @@ Config coming later
 ** Avy
 
 #+BEGIN_SRC emacs-lisp
-  (use-package avy
-    :diminish
-    :defer 1
-    :bind
-    (("C-;" . avy-goto-char)))
+    (use-package avy
+      :diminish
+      :defer 1
+      :bind
+      (("C-;" . avy-goto-char)
+       ("C-'" . avy-goto-char-2)))
 #+END_SRC
 
 ** [[https://github.com/magit/magit][Magit
@@ -788,15 +743,15 @@ Config coming later
 #+BEGIN_SRC emacs-lisp
   (use-package multi-term
     :bind (("C-x m" . multi-term-next)
-           ("C-x M" . multi-term))
-    :config '(setq multi-term-program "/bin/zsh"))
-#+END_SRC
+	   ("C-x M" . multi-term))
+    :config '(setq multi-term-program "/usr/bin/zsh"))
 
-** eglot
-#+BEGIN_SRC emacs-lisp
-  (use-package eglot
-    :hook  (python-mode . eglot-ensure)
-    :commands (eglot))
+  (defun multi-term-open ()
+    "Special Command to open a new terminal without a mode-line"
+    (interactive)
+    (multi-term)
+    (hide-mode-line-mode))
+
 #+END_SRC
 
 ** dictcc
