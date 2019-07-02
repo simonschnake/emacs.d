@@ -5,7 +5,7 @@
 ;; (package-initialize)
 (setq package-enable-at-startup nil)
 
-(defun sim/file-modification-time (filename)
+(defun file-modification-time (filename)
   "The modification time of a file."
   (if (file-exists-p filename)
       (file-attribute-modification-time (file-attributes filename))
@@ -15,8 +15,8 @@
       emacs-elc (concat (file-name-sans-extension emacs-org) ".elc"))
 
 (defun emacs-elc-is-old ()
-  (time-less-p (sim/file-modification-time emacs-elc)
-               (sim/file-modification-time emacs-org)))
+  (time-less-p (file-modification-time emacs-elc)
+               (file-modification-time emacs-org)))
 
 (defun recompile-emacs-org ()
   (interactive)

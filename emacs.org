@@ -5,21 +5,14 @@
 
 * Intro
 
-This my emacs-config. It should be stable at the moment.
-It is based on [[https://github.com/Kaali/vj-emacs-0x12][vj-emacs-0x12]].
-
-Key features are:
-- fast startup time
-- ivy
-- fast switching between dark and light theme
-- language-server-protocoll support (python)
-- jupyter support in org-mode
+This my emacs-config. Since I'm starting to start a emacs-daemon in the
+background at startup.  I don't care so much about emacs start-up speed and
+deleted hardcore start-up speed hacks.
 
 ** Installation
 
-Keep it simple. Clone as =~/.emacs.d= and
+Keep it simple. Clone as =~/.emacs.d= and start emacs
 
-** TODO Things to add
 * Bootstrap Configuration
 ** Start Emacs Server
 #+BEGIN_SRC emacs-lisp
@@ -189,6 +182,13 @@ Add [[https://github.com/emacsmirror/diminish][diminish]] and bind-key support t
   ; Requires here should speed up the boot
   (require 'diminish)
   (require 'bind-key)
+#+END_SRC
+
+** Quelpa
+
+#+BEGIN_SRC emacs-lisp
+(use-package quelpa)
+(use-package quelpa-use-package)
 #+END_SRC
 
 * Global configuration
@@ -420,20 +420,20 @@ Needs =xprop= to switch between dark and light gnome bar theme
 We use telephone-line because, it's fast to load.
 Config coming later
 #+BEGIN_SRC emacs-lisp
-    (use-package telephone-line
-      :config (progn
-		(setq telephone-line-lhs
-		      '((evil   . (telephone-line-evil-tag-segment))
-			(accent . (telephone-line-vc-segment
-				   telephone-line-erc-modified-channels-segment
-				   telephone-line-process-segment))
-			(nil    . (telephone-line-minor-mode-segment
-				   telephone-line-buffer-segment))))
-		(setq telephone-line-rhs
-		      '((nil    . (telephone-line-misc-info-segment))
-			(accent . (telephone-line-major-mode-segment))
-			(evil   . (telephone-line-airline-position-segment))))
-		(telephone-line-mode 1)))
+  (use-package telephone-line
+    :config
+    (setq telephone-line-lhs
+	  '((evil . (telephone-line-evil-tag-segment))
+	    (accent . (telephone-line-vc-segment
+		       telephone-line-erc-modified-channels-segment
+		       telephone-line-process-segment))
+	    (nil    . (telephone-line-minor-mode-segment
+		       telephone-line-buffer-segment))))
+    (setq telephone-line-rhs
+	  '((nil    . (telephone-line-misc-info-segment))
+	    (accent . (telephone-line-major-mode-segment))
+	    (evil   . (telephone-line-airline-position-segment))))
+    (telephone-line-mode 1))
 #+END_SRC
 * Major modes
 ** PDF-Tools
@@ -473,7 +473,38 @@ np.ones((4,4)) + np.diag(np.ones(4))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-  (use-package jupyter)   
+(use-package jupyter)
+
+#+END_SRC
+** Julia
+#+BEGIN_SRC emacs-lisp
+  (use-package julia-mode)
+  (use-package julia-repl
+   :commands julia-repl
+   :hook (julia-mode . julia-repl-mode))
+
+  (use-package ess
+    :config
+    (load "ess-autoloads"))
+
+  (use-package ob-julia
+    :quelpa (ob-julia :fetcher github :repo "gjkerns/ob-julia"))
+
+#+END_SRC
+
+Install =LanguageServer.jl=
+#+BEGIN_SRC sh
+julia> using Pkg
+julia> Pkg.add("LanguageServer")
+julia> Pkg.add("PackageCompiler")
+julia> using PackageCompiler
+julia> compile_package("LanguageServer")
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+  (use-package lsp-julia
+    :quelpa (lsp-julia :fetcher github :repo "non-Jedi/lsp-julia")
+    :hook (julia-mode . lsp-mode))
 #+END_SRC
 ** Org
 *** General org-mode configuration
@@ -481,14 +512,16 @@ np.ones((4,4)) + np.diag(np.ones(4))
  #+BEGIN_SRC emacs-lisp
    (use-package org
      :config
+     (setq org-confirm-babel-evaluate nil)
      (org-babel-do-load-languages
       'org-babel-load-languages
       '((emacs-lisp . t)
 	(latex . t)
-	;;(julia . t) 
+	(julia . t) 
 	(python . t)
 	(jupyter . t) ;; jupyter should be loaded las 
 	))
+
      (unbind-key "M-h" org-mode-map))
 
    (use-package org-bullets
@@ -546,13 +579,13 @@ np.ones((4,4)) + np.diag(np.ones(4))
 #+END_SRC
 ** SLIME
 #+BEGIN_SRC emacs-lisp 
-(use-package slime
-  :ensure t
-  :config
-  (progn
+  (use-package slime
+    :ensure t
+    :config
     (setq inferior-lisp-program "/usr/bin/sbcl")
-    (slime-setup)))
+    (slime-setup))
 #+END_SRC
+
 * Minor Modes
 *** lsp-mode
  #+BEGIN_SRC emacs-lisp
@@ -623,7 +656,7 @@ np.ones((4,4)) + np.diag(np.ones(4))
        :bind (:map magit-gh-pulls-mode-map
        ("$" . magit-gh-pulls-popup)))
    #+end_src
-
+ 
 ** [[https://github.com/Fuco1/smartparens][Smartparens]]
    Brilliant automatic balancing of pairs. Makes for a really nice experience when typing in any language - programming or not.
    Just check out some of the gifs in the project's README.
@@ -631,68 +664,36 @@ np.ones((4,4)) + np.diag(np.ones(4))
      (use-package smartparens
        :diminish smartparens-mode
        :config
-       (progn
-	 (smartparens-global-mode)
-	 (show-smartparens-global-mode t)))
+       (smartparens-global-mode)
+       (show-smartparens-global-mode t))
    #+end_src
 
 ** Yasnippet
 #+BEGIN_SRC emacs-lisp
   (use-package
-   yasnippet
-   :defer 3
-   :diminish yas-minor-mode
-   :config (yas-global-mode t))
+    yasnippet
+    :defer 3
+    :diminish yas-minor-mode
+    :config (yas-global-mode t))
+
+  (use-package
+    yasnippet-snippets
+    :defer 4
+    :after yasnippet)
 #+END_SRC
 ** Company
 
    #+BEGIN_SRC emacs-lisp
      (use-package company
        :defer 3
-       :diminish ""
-       :init
-
-       :bind (:map company-active-map
-		   ("M-j" . company-select-next)
-		   ("M-k" . company-select-previous))
-       :preface
-       ;; enable yasnippet everywhere
-       (defvar company-mode/enable-yas t
-	 "Enable yasnippet for all backends.")
-       (defun company-mode/backend-with-yas (backend)
-	 (if (or
-	      (not company-mode/enable-yas)
-	      (and (listp backend) (member 'company-yasnippet backend)))
-	     backend
-	   (append (if (consp backend) backend (list backend))
-		   '(:with company-yasnippet))))
+       :diminish company-mode
        :config
-       (global-company-mode)
-       (setq company-tooltip-limit 10)
-       (setq company-dabbrev-downcase 0)
-       (setq company-idle-delay 0)
-       (setq company-echo-delay 0)
-       (setq company-minimum-prefix-length 3)
-       (setq company-require-match nil)
-       (setq company-selection-wrap-around t)
-       (setq company-tooltip-align-annotations t)
-       ;; (setq company-tooltip-flip-when-above t)
-       (setq company-transformers '(company-sort-by-occurrence)) ; weight by frequency
-       (define-key company-active-map (kbd "M-n") nil)
-       (define-key company-active-map (kbd "M-p") nil)
-       (define-key company-active-map (kbd "C-n") 'company-select-next)
-       (define-key company-active-map (kbd "C-p") 'company-select-previous)
-       (define-key company-active-map (kbd "TAB") 'company-complete-common-or-cycle)
-       (define-key company-active-map (kbd "<tab>") 'company-complete-common-or-cycle)
-       (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
-       (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
-       (setq company-backends
-	     (mapcar #'company-mode/backend-with-yas company-backends))
+       (global-company-mode t))
 
-       (use-package company-statistics
-	 :ensure t
-	 :config
-	 (add-hook 'after-init-hook 'company-statistics-mode)))
+     (use-package company-statistics
+       :defer 4
+       :config
+       (company-statistics-mode))
    #+END_SRC
 
 ** [[https://github.com/magnars/multiple-cursors.el][multiple-cursors]]
@@ -772,6 +773,11 @@ Dict.cc in Emacs
     :defer 3)
 #+END_SRC
 
+** rainbow-mode
+#+BEGIN_SRC emacs-lisp
+  (use-package rainbow-mode
+	       :commands rainbow-mode)
+#+END_SRC
 * Local Configuration
 
 #+BEGIN_SRC emacs-lisp
