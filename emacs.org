@@ -474,7 +474,19 @@ np.ones((4,4)) + np.diag(np.ones(4))
 
 #+BEGIN_SRC emacs-lisp
 (use-package jupyter)
+#+END_SRC
+*** ipython notebooks
+#+BEGIN_SRC emacs-lisp
+  (use-package ein
+    )
+#+END_SRC
+*** Elpy IDE
 
+#+BEGIN_SRC emacs-lisp
+(use-package elpy
+  :ensure t
+  :init
+  (elpy-enable))
 #+END_SRC
 ** Julia
 #+BEGIN_SRC emacs-lisp
@@ -643,12 +655,14 @@ julia> compile_package("LanguageServer")
       ;;(setq magit-completing-read-function 'ivy-completing-read))
    #+end_src
 
-** [[https://github.com/sigma/magit-gh-pulls][GitHub integration]]
+** [[https://github.com/sigma/magit-gh-pulls][GitHub integration]] 
+
    This package integrates Magit with GitHub to allow the user to perform pull request actions.
    I've added an argument so that when raising a new PR, it's automatically opened in my web-browser.
    If my web-browser is already running, this'll simply open a new tab - if not, it'll spawn a new instance.
    Another handy functionality here is that the URL of the PR is automatically copied to the kill ring, so you can
    paste it wherever necessary.
+   
    #+begin_src emacs-lisp
      (use-package magit-gh-pulls
        :disabled t
@@ -777,6 +791,12 @@ Dict.cc in Emacs
 #+BEGIN_SRC emacs-lisp
   (use-package rainbow-mode
 	       :commands rainbow-mode)
+#+END_SRC
+** Polymode
+
+#+BEGIN_SRC emacs-lisp
+(use-package polymode)
+(use-package poly-org)
 #+END_SRC
 * Local Configuration
 
