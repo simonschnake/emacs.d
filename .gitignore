@@ -57,3 +57,5 @@ site-lisp/package/
 emacs.el
 /request
 local.el
+/quelpa
+/transient
