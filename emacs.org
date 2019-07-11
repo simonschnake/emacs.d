@@ -485,7 +485,7 @@ np.ones((4,4)) + np.diag(np.ones(4))
 #+BEGIN_SRC emacs-lisp
 (use-package elpy
   :ensure t
-  :init
+  :commands
   (elpy-enable))
 #+END_SRC
 ** Julia
@@ -696,19 +696,23 @@ julia> compile_package("LanguageServer")
     :after yasnippet)
 #+END_SRC
 ** Company
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package company
-       :defer 3
-       :diminish company-mode
-       :config
-       (global-company-mode t))
-
-     (use-package company-statistics
-       :defer 4
-       :config
-       (company-statistics-mode))
-   #+END_SRC
+#+BEGIN_SRC emacs-lisp
+  (use-package company
+    :ensure t
+    :diminish company-mode
+    :config
+    ;; Zero delay when pressing tab
+    (setq company-idle-delay 0)
+    (global-company-mode t)
+    ;; remove unused backends
+    (setq company-backends (delete 'company-semantic company-backends))
+    (setq company-backends (delete 'company-eclim company-backends))
+    (setq company-backends (delete 'company-xcode company-backends))
+    (setq company-backends (delete 'company-clang company-backends))
+    (setq company-backends (delete 'company-bbdb company-backends))
+    (setq company-backends (delete 'company-oddmuse company-backends))
+  )
+#+END_SRC
 
 ** [[https://github.com/magnars/multiple-cursors.el][multiple-cursors]]
    Having multiple cursors can be very powerful.
