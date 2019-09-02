@@ -519,6 +519,7 @@ julia> compile_package("LanguageServer")
 	(latex . t)
 	(julia . t) 
 	(python . t)
+	(R . t)
 	(jupyter . t) ;; jupyter should be loaded las 
 	))
 
