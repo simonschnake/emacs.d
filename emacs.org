@@ -1,3 +1,4 @@
+
 -*- mode: org; fill-column: 78 -*-
 #+TITLE: Emacs Configuration
 #+AUTHOR: Simon Schnake
@@ -184,12 +185,6 @@ Add [[https://github.com/emacsmirror/diminish][diminish]] and bind-key support t
   (require 'bind-key)
 #+END_SRC
 
-** Quelpa
-
-#+BEGIN_SRC emacs-lisp
-(use-package quelpa)
-(use-package quelpa-use-package)
-#+END_SRC
 
 * Global configuration
 ** Settings
@@ -399,22 +394,24 @@ Needs =xprop= to switch between dark and light gnome bar theme
     ;; cleaning up
     (defadvice load-theme (before theme-dont-propagate activate)
       (mapc #'disable-theme custom-enabled-themes))
+    ;; Global settings (defaults)
+    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+	  doom-themes-enable-italic t) ; if nil, italics is universally disabled
 
-    (defun doom-theming (theme-name)
-      "a wrapper for the whole doom theming process"
-      (progn
-	(setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-	      doom-themes-enable-italic t) ; if nil, italics is universally disabled
-	(load-theme theme-name t)
-	(doom-themes-visual-bell-config)
-	(doom-themes-neotree-config)
-	(doom-themes-treemacs-config)
-	(doom-themes-org-config)))
+    ;; Load the theme (doom-one, doom-molokai, etc); keep in mind that each theme
+    ;; may have their own settings.
+    (load-theme 'doom-one-light t)
 
-    (defun light () (interactive) (doom-theming 'doom-one-light))
-    (defun dark () (interactive) (doom-theming 'doom-one))
+    ;; Enable flashing mode-line on errors
+    (doom-themes-visual-bell-config)
 
-    (light))
+    ;; Enable custom neotree theme (all-the-icons must be installed!)
+    (doom-themes-neotree-config)
+    ;; or for treemacs users
+    (doom-themes-treemacs-config)
+
+    ;; Corrects (and improves) org-mode's native fontification.
+    (doom-themes-org-config))
 #+end_src
 *** Modeline
 We use telephone-line because, it's fast to load.
@@ -474,7 +471,16 @@ np.ones((4,4)) + np.diag(np.ones(4))
 
 #+BEGIN_SRC emacs-lisp
 (use-package jupyter)
+#+END_SRC
+*** ipython notebooks
+#+BEGIN_SRC emacs-lisp
+  (use-package ein)
+#+END_SRC
+*** Elpy IDE
 
+#+BEGIN_SRC emacs-lisp
+(use-package elpy
+  :commands elpy-enable)
 #+END_SRC
 ** Julia
 #+BEGIN_SRC emacs-lisp
@@ -486,10 +492,6 @@ np.ones((4,4)) + np.diag(np.ones(4))
   (use-package ess
     :config
     (load "ess-autoloads"))
-
-  (use-package ob-julia
-    :quelpa (ob-julia :fetcher github :repo "gjkerns/ob-julia"))
-
 #+END_SRC
 
 Install =LanguageServer.jl=
@@ -501,11 +503,6 @@ julia> using PackageCompiler
 julia> compile_package("LanguageServer")
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-  (use-package lsp-julia
-    :quelpa (lsp-julia :fetcher github :repo "non-Jedi/lsp-julia")
-    :hook (julia-mode . lsp-mode))
-#+END_SRC
 ** Org
 *** General org-mode configuration
 
@@ -630,8 +627,8 @@ julia> compile_package("LanguageServer")
        ("C-'" . avy-goto-char-2)))
 #+END_SRC
 
-** [[https://github.com/magit/magit][Magit
-]]
+** [[https://github.com/magit/magit][Magit]]
+
    The one true Git porcelain!
    Truely a joy to use - it surfaces the power of Git in such a fluent manner.
    Anyone using Git and Emacs *needs* Magit in their life!
@@ -644,12 +641,14 @@ julia> compile_package("LanguageServer")
       ;;(setq magit-completing-read-function 'ivy-completing-read))
    #+end_src
 
-** [[https://github.com/sigma/magit-gh-pulls][GitHub integration]]
+** [[https://github.com/sigma/magit-gh-pulls][GitHub integration]] 
+
    This package integrates Magit with GitHub to allow the user to perform pull request actions.
    I've added an argument so that when raising a new PR, it's automatically opened in my web-browser.
    If my web-browser is already running, this'll simply open a new tab - if not, it'll spawn a new instance.
    Another handy functionality here is that the URL of the PR is automatically copied to the kill ring, so you can
    paste it wherever necessary.
+   
    #+begin_src emacs-lisp
      (use-package magit-gh-pulls
        :disabled t
@@ -683,19 +682,23 @@ julia> compile_package("LanguageServer")
     :after yasnippet)
 #+END_SRC
 ** Company
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package company
-       :defer 3
-       :diminish company-mode
-       :config
-       (global-company-mode t))
-
-     (use-package company-statistics
-       :defer 4
-       :config
-       (company-statistics-mode))
-   #+END_SRC
+#+BEGIN_SRC emacs-lisp
+  (use-package company
+    :ensure t
+    :diminish company-mode
+    :config
+    ;; Zero delay when pressing tab
+    (setq company-idle-delay 0)
+    (global-company-mode t)
+    ;; remove unused backends
+    (setq company-backends (delete 'company-semantic company-backends))
+    (setq company-backends (delete 'company-eclim company-backends))
+    (setq company-backends (delete 'company-xcode company-backends))
+    (setq company-backends (delete 'company-clang company-backends))
+    (setq company-backends (delete 'company-bbdb company-backends))
+    (setq company-backends (delete 'company-oddmuse company-backends))
+  )
+#+END_SRC
 
 ** [[https://github.com/magnars/multiple-cursors.el][multiple-cursors]]
    Having multiple cursors can be very powerful.
@@ -779,6 +782,12 @@ Dict.cc in Emacs
   (use-package rainbow-mode
 	       :commands rainbow-mode)
 #+END_SRC
+** Polymode
+
+#+BEGIN_SRC emacs-lisp
+(use-package polymode)
+(use-package poly-org)
+#+END_SRC
 * Local Configuration
 
 #+BEGIN_SRC emacs-lisp
@@ -786,9 +795,5 @@ Dict.cc in Emacs
     (if (file-exists-p localel)
         (load (file-name-sans-extension localel))))
 #+END_SRC
-
-
-
-
 
 
