@@ -457,6 +457,11 @@ Config coming later
   #+END_SRC
 *** jupyter
 
+With Ubuntu 16.04 i had to use this configure setup 
+
+./configure --with-mailutils --with-xml2 --with-imagemagick --with-modules --prefix=$HOME/.local/
+
+
 This package offers jupyter kernel support for emacs org-mode. I take it as a
 replacement for ob-ipython. More information at [[https://github.com/dzop/emacs-jupyter]]
 
@@ -514,13 +519,17 @@ julia> compile_package("LanguageServer")
       'org-babel-load-languages
       '((emacs-lisp . t)
 	(latex . t)
-	(julia . t) 
+	;; (julia . t) 
 	(python . t)
 	(R . t)
 	(jupyter . t) ;; jupyter should be loaded las 
 	))
 
      (unbind-key "M-h" org-mode-map))
+
+   (setq org-babel-default-header-args:jupyter-python '((:async . "yes")
+							(:session . "py")))
+
 
    (use-package org-bullets
      :commands (org-bullets-mode)
