@@ -514,7 +514,7 @@ julia> compile_package("LanguageServer")
       'org-babel-load-languages
       '((emacs-lisp . t)
 	(latex . t)
-	(julia . t) 
+	;; (julia . t) 
 	(python . t)
 	(R . t)
 	(jupyter . t) ;; jupyter should be loaded las 
