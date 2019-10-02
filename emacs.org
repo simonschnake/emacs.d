@@ -527,10 +527,6 @@ julia> compile_package("LanguageServer")
 
      (unbind-key "M-h" org-mode-map))
 
-   (setq org-babel-default-header-args:jupyter-python '((:async . "yes")
-							(:session . "py")))
-
-
    (use-package org-bullets
      :commands (org-bullets-mode)
      :hook     (org-mode . (lambda () (org-bullets-mode 1))))
