@@ -6,9 +6,7 @@
 
 * Intro
 
-This my emacs-config. Since I'm starting to start a emacs-daemon in the
-background at startup.  I don't care so much about emacs start-up speed and
-deleted hardcore start-up speed hacks.
+This my emacs-config.
 
 ** Installation
 
