@@ -483,7 +483,7 @@ np.ones((4,4)) + np.diag(np.ones(4))
 
 #+BEGIN_SRC emacs-lisp
 (use-package elpy
-  :commands elpy-enable)
+   :commands elpy-enable)
 #+END_SRC
 ** Julia
 #+BEGIN_SRC emacs-lisp
@@ -591,17 +591,42 @@ julia> compile_package("LanguageServer")
     (slime-setup))
 #+END_SRC
 
+** Go-Lang
+
+#+BEGIN_SRC emacs-lisp
+  (use-package go-mode
+    :ensure t
+    :init
+    (progn
+      (setq gofmt-command "goimports")
+      (add-hook 'before-save-hook 'gofmt-before-save))
+    :bind (("M-." . godef-jump)
+	   ("M-," . pop-tag-mark))
+    )
+
+
+
+  (use-package go-eldoc
+    :ensure t
+    :defer
+    :init
+    (add-hook 'go-mode-hook 'go-eldoc-setup))
+#+END_SRC
+
 * Minor Modes
 *** lsp-mode
  #+BEGIN_SRC emacs-lisp
- (use-package lsp-mode :commands lsp)
- (use-package lsp-ui :commands lsp-ui-mode)
- (use-package company-lsp :commands company-lsp)
+ ;;(use-package lsp-mode :commands lsp)
+ ;;(use-package lsp-ui :commands lsp-ui-mode)
+ ;;(use-package company-lsp :commands company-lsp)
  #+END_SRC
 ** Flymake
  #+BEGIN_SRC emacs-lisp
    (use-package flymake
      :diminish)
+
+   (use-package flymake-go)
+
  #+END_SRC 
 ** Ivy
 
@@ -690,21 +715,32 @@ julia> compile_package("LanguageServer")
 #+END_SRC
 ** Company
 #+BEGIN_SRC emacs-lisp
-  (use-package company
-    :ensure t
-    :diminish company-mode
-    :config
-    ;; Zero delay when pressing tab
-    (setq company-idle-delay 0)
-    (global-company-mode t)
-    ;; remove unused backends
-    (setq company-backends (delete 'company-semantic company-backends))
-    (setq company-backends (delete 'company-eclim company-backends))
-    (setq company-backends (delete 'company-xcode company-backends))
-    (setq company-backends (delete 'company-clang company-backends))
-    (setq company-backends (delete 'company-bbdb company-backends))
-    (setq company-backends (delete 'company-oddmuse company-backends))
-  )
+    (use-package company
+      :ensure t
+      :diminish company-mode
+      :config
+      ;; Zero delay when pressing tab
+      (setq company-idle-delay 0.3)
+      (global-company-mode t)
+      ;; remove unused backends
+      (setq company-backends (delete 'company-semantic company-backends))
+      (setq company-backends (delete 'company-eclim company-backends))
+      (setq company-backends (delete 'company-xcode company-backends))
+      (setq company-backends (delete 'company-clang company-backends))
+      (setq company-backends (delete 'company-bbdb company-backends))
+      (setq company-backends (delete 'company-oddmuse company-backends))
+    )
+  
+  (use-package company-quickhelp          ; Documentation popups for Company
+    :defer t
+    :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
+
+  (use-package company-go
+    :defer t
+    :init
+    (with-eval-after-load 'company
+      (add-to-list 'company-backends 'company-go)))
+
 #+END_SRC
 
 ** [[https://github.com/magnars/multiple-cursors.el][multiple-cursors]]
