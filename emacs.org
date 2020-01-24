@@ -183,7 +183,6 @@ Add [[https://github.com/emacsmirror/diminish][diminish]] and bind-key support t
   (require 'bind-key)
 #+END_SRC
 
-
 * Global configuration
 ** Settings
 *** Disable byte compile warnings
@@ -410,7 +409,57 @@ Needs =xprop= to switch between dark and light gnome bar theme
 
     ;; Corrects (and improves) org-mode's native fontification.
     (doom-themes-org-config))
+
+
+  (defun set-dark-theme ()
+    (interactive)
+    (progn
+      (defadvice load-theme (before theme-dont-propagate activate)
+	(mapc #'disable-theme custom-enabled-themes))
+      ;; Global settings (defaults)
+      (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+	    doom-themes-enable-italic t) ; if nil, italics is universally disabled
+
+      ;; Load the theme (doom-one, doom-molokai, etc); keep in mind that each theme
+      ;; may have their own settings.
+      (load-theme 'doom-one t)
+
+      ;; Enable flashing mode-line on errors
+      (doom-themes-visual-bell-config)
+
+      ;; Enable custom neotree theme (all-the-icons must be installed!)
+      (doom-themes-neotree-config)
+      ;; or for treemacs users
+      (doom-themes-treemacs-config)
+
+      ;; Corrects (and improves) org-mode's native fontification.
+      (doom-themes-org-config)))
+
+  (defun set-light-theme ()
+    (interactive)
+    (progn
+      (defadvice load-theme (before theme-dont-propagate activate)
+	(mapc #'disable-theme custom-enabled-themes))
+      ;; Global settings (defaults)
+      (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+	    doom-themes-enable-italic t) ; if nil, italics is universally disabled
+
+      ;; Load the theme (doom-one, doom-molokai, etc); keep in mind that each theme
+      ;; may have their own settings.
+      (load-theme 'doom-one-light t)
+
+      ;; Enable flashing mode-line on errors
+      (doom-themes-visual-bell-config)
+
+      ;; Enable custom neotree theme (all-the-icons must be installed!)
+      (doom-themes-neotree-config)
+      ;; or for treemacs users
+      (doom-themes-treemacs-config)
+
+      ;; Corrects (and improves) org-mode's native fontification.
+      (doom-themes-org-config)))
 #+end_src
+
 *** Modeline
 We use telephone-line because, it's fast to load.
 Config coming later
@@ -430,6 +479,22 @@ Config coming later
 	    (evil   . (telephone-line-airline-position-segment))))
     (telephone-line-mode 1))
 #+END_SRC
+*** Font
+#+BEGIN_SRC emacs-lisp
+(set-face-attribute 'default nil
+                    :family "Source Code Pro for Powerline"
+                    :height 125
+                    :weight 'light
+                    :width 'normal)
+#+END_SRC
+** OSX Setup
+#+BEGIN_SRC emacs-lisp
+  (when (eq system-type 'darwin)
+    (setq mac-option-modifier 'meta)
+    (setq mac-command-modifier 'meta)
+    (setq mac-right-option-modifier nil))
+#+END_SRC
+
 * Major modes
 ** PDF-Tools
 #+BEGIN_SRC emacs-lisp
@@ -449,10 +514,16 @@ Config coming later
   #+BEGIN_SRC emacs-lisp
     (use-package
       conda
+      :disabled t
       :commands conda-env-activate
       :init
       (setenv "ANACONDA_HOME" "~/.conda/"))
   #+END_SRC
+*** virtualenv
+#+BEGIN_SRC emacs-lisp
+(use-package pyvenv)
+#+END_SRC
+
 *** jupyter
 
 With Ubuntu 16.04 i had to use this configure setup 
@@ -479,12 +550,30 @@ np.ones((4,4)) + np.diag(np.ones(4))
 #+BEGIN_SRC emacs-lisp
   (use-package ein)
 #+END_SRC
+
 *** Elpy IDE
 
 #+BEGIN_SRC emacs-lisp
-(use-package elpy
-   :commands elpy-enable)
+  ;; (use-package elpy
+  ;;   :commands elpy-enable
+  ;;   :init
+  ;;   (elpy-enable)
+  ;;   :config
+  ;;   (setq elpy-rpc-python-command "python3")
+  ;;   (setq elpy-rpc-backend "jedi")
+  ;;   (setq elpy-rpc-timeout 3)
+  ;;   ;; ipython workaround
+  ;;   ;; https://elpy.readthedocs.io/en/latest/ide.html#interpreter-setup
+  ;;   (setq python-shell-interpreter "jupyter"
+  ;; 	python-shell-interpreter-args "console --simple-prompt"
+  ;; 	python-shell-prompt-detect-failure-warning nil)
+  ;;   (add-to-list 'python-shell-completion-native-disabled-interpreters
+  ;; 	       "jupyter"))
 #+END_SRC
+
+
+
+
 ** Julia
 #+BEGIN_SRC emacs-lisp
   (use-package julia-mode)
@@ -517,10 +606,7 @@ julia> compile_package("LanguageServer")
       'org-babel-load-languages
       '((emacs-lisp . t)
 	(latex . t)
-	;; (julia . t) 
-	(python . t)
-	(R . t)
-	(jupyter . t) ;; jupyter should be loaded las 
+	(ein . t)
 	))
 
      (unbind-key "M-h" org-mode-map))
@@ -542,6 +628,9 @@ julia> compile_package("LanguageServer")
      :hook ((org-mode . turn-on-org-cdlatex)
 	    (LaTeX-mode . turn-on-cdlatex)))
  #+END_SRC
+
+ #+RESULTS:
+
 
 *** Thesis Configuration
 #+BEGIN_SRC emacs-lisp
