@@ -5,19 +5,12 @@
 
 * Intro
 
-This my emacs-config.
-
-** Installation
-
-Keep it simple. Clone as =~/.emacs.d= and start emacs
+This my emacs-config. It is another attempt at at creating a fitted
+editor. Since I'm changing and visiting every aspect of this document every
+view month, I will try to document every change made as best as possible.  If
+you reading this document, please excuse my horrible english writing skills.
 
 * Bootstrap Configuration
-** Start Emacs Server
-#+BEGIN_SRC emacs-lisp
-  (require 'server)
-  (unless (server-running-p)
-    (server-start))
-#+END_SRC
 ** Benchmark Emacs startup
 
 It's easier to optimize Emacs startup time when I have some data
@@ -181,7 +174,6 @@ Add [[https://github.com/emacsmirror/diminish][diminish]] and bind-key support t
   (require 'diminish)
   (require 'bind-key)
 #+END_SRC
-
 * Global configuration
 ** Settings
 *** Disable byte compile warnings
@@ -352,6 +344,7 @@ is highlighted.
 ;; Comment or uncomment the region
 (global-set-key (kbd "C-c ;") 'comment-or-uncomment-region)
 #+END_SRC
+
 ** Appearance
    Configuration related to the appearance of Emacs
 *** Current line highlighting
@@ -371,6 +364,8 @@ is highlighted.
       (dolist (m my-ghd-modes)
 	(add-hook m (lambda () (setq global-hl-line-mode nil))))
     #+end_src
+
+
 *** Rainbow Delimiters
     So handy! This will colourize delimiters differently based on their depth.
     Really helps you not get burried when you're in deep.
@@ -380,9 +375,9 @@ is highlighted.
       (prog-mode . rainbow-delimiters-mode)
       (yaml-mode . rainbow-delimiters-mode))
     #+end_src
+
 *** Theme
 /Fashion First!/
-Needs =xprop= to switch between dark and light gnome bar theme
 #+begin_src emacs-lisp
   (use-package
     doom-themes
@@ -478,6 +473,7 @@ Config coming later
 	    (evil   . (telephone-line-airline-position-segment))))
     (telephone-line-mode 1))
 #+END_SRC
+
 *** Font
 #+BEGIN_SRC emacs-lisp
 (set-face-attribute 'default nil
@@ -486,6 +482,7 @@ Config coming later
                     :weight 'light
                     :width 'normal)
 #+END_SRC
+
 ** OSX Setup
 #+BEGIN_SRC emacs-lisp
   (when (eq system-type 'darwin)
